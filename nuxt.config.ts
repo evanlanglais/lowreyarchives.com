@@ -2,10 +2,7 @@
 
 export default defineNuxtConfig({
   modules: [
-    "@nuxtjs/tailwindcss",
     "@nuxtjs/supabase",
-    "@formkit/nuxt",
-    "@element-plus/nuxt",
   ],
   runtimeConfig: {
     public: {

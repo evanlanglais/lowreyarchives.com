@@ -13,14 +13,9 @@
     "lint:fix": "eslint --fix --ext \".ts,.js,.vue\" --ignore-path .eslintignore ."
   },
   "devDependencies": {
-    "@element-plus/nuxt": "^1.0.5",
-    "@formkit/nuxt": "^0.18.3",
     "@nuxt-awesome/theme": "^2.0.12",
-    "@nuxtjs/supabase": "^1.0.2",
-    "element-plus": "^2.3.9",
+    "@nuxtjs/supabase": "^1.1.5",
     "nuxt": "^3.9.3",
-    "nuxt-security": "^0.14.4",
-    "postcss-custom-properties": "^13.3.0",
     "prettier": "^3.2.1",
     "typescript": "^5.3.3",
     "@nuxtjs/eslint-config-typescript": "^12.1.0",
@@ -33,9 +28,6 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.321.1",
-    "@aws-sdk/s3-request-presigner": "^3.321.1",
-    "@formkit/themes": "^0.18.3",
-    "@nuxt/image": "^0.7.1",
-    "@nuxtjs/color-mode": "^3.3.0"
+    "@aws-sdk/s3-request-presigner": "^3.321.1"
   }
 }

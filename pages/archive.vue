@@ -1,11 +1,9 @@
 <template>
-<div>
-  <h2>I am the archive page</h2>
-</div>
+  <div>
+    <h2>I am the archive page</h2>
+  </div>
 </template>
 
 <script setup>
-definePageMeta({
-  middleware: ["auth"]
-});
+definePageMeta({ layout: "default" });
 </script>

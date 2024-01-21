@@ -1,21 +1,26 @@
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
 
 export default defineNuxtConfig({
-    // runtimeConfig: {
-    //     //jwtRSAPublic: '',
-    //     //jwtRSAPrivate: '',
-    //     //mongoConnectionString: '',
-    //     //sendgridKey: '',
-    //     // public: {
-    //     //
-    //     // }
-    // },
-    // build: {
-    //     //transpile: ['jsonwebtoken']
-    // },
-    modules: [
-        '@nuxtjs/tailwindcss',
-        '@nuxtjs/supabase',
-        '@formkit/nuxt',
-    ]
-})
+  modules: [
+    "@nuxtjs/tailwindcss",
+    "@nuxtjs/supabase",
+    "@formkit/nuxt",
+    "@element-plus/nuxt",
+  ],
+  runtimeConfig: {
+    public: {
+      baseUrl: process.env.BASE_URL || "http://localhost:3000",
+    },
+  },
+  app: {
+    pageTransition: { name: "page", mode: "out-in" },
+  },
+  supabase: {
+    redirectOptions: {
+      login: "/login",
+      callback: "/confirm",
+      exclude: ["/register"],
+    },
+  },
+  extends: ["@nuxt-awesome/theme"],
+});

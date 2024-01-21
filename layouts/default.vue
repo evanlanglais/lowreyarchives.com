@@ -1,11 +1,9 @@
 <template>
-  <div class="min-h-screen u-bg-black">
-    <AppHeader />
-    <div class="max-w-xl min-h-screen px-4 mx-auto sm:px-6 lg:px-8">
-      <div class="min-h-screen -mt-[50px] flex items-center justify-center">
-        <slot />
-      </div>
-    </div>
-    <AppFooter />
+  <div class="overflow-x-hidden">
+    <LayoutsCustomNavbar class="h-[64px] max-h-[64px]" />
+    <LayoutPageContent>
+      <slot />
+    </LayoutPageContent>
+    <LayoutPageFooter class="h-[52px] md:h-[42px]" />
   </div>
 </template>

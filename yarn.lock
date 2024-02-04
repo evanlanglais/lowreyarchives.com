@@ -1363,10 +1363,9 @@
     read-package-json-fast "^3.0.0"
     which "^4.0.0"
 
-"@nuxt-awesome/theme@^2.0.12":
+"@nuxt-awesome/theme@git+https://github.com/evanlanglais/nuxt3-awesome-starter.git":
   version "2.0.12"
-  resolved "https://registry.yarnpkg.com/@nuxt-awesome/theme/-/theme-2.0.12.tgz#4eb8f9098b4d18f15e1c4addc73eea7a66d9db11"
-  integrity sha512-a2zmP6za8dNaaNyKaOUxPaKj6cwBjIYmNJbj/KS066m9efYn8ko2S1hVqbfIAIi5obJQGBWBAQ6n9a2PfgQDPQ==
+  resolved "git+https://github.com/evanlanglais/nuxt3-awesome-starter.git#2ef1289a7a7ac628f9ab06979d81adedf128c8c2"
   dependencies:
     "@nuxt/content" "^2.9.0"
     "@nuxt/devtools" "^1.0.0"

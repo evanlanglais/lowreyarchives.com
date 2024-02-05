@@ -4,7 +4,7 @@
       <LayoutPageTitle text="Login" />
     </LayoutPageHeader>
     <LayoutPageSection>
-      <LayoutPageSectionTitle title="Sign in to your account" />
+      <LayoutPageSectionTitle text="Sign in to your account" />
       <AwesomeAlertBanner
         v-if="loginState == LoginStateEnum.ErrorSignIn"
         type="error"
@@ -43,7 +43,12 @@
               log in
             </p>
             <div class="flex">
-              <AwesomeFormTextInput v-model="email" class="w-full md:w-full">
+              <AwesomeFormTextInput
+                v-model="email"
+                class="w-full md:w-full"
+                tabindex="1"
+                @keyup.enter="submitLoginRequest"
+              >
                 <template #prefix-disabled>
                   <span class="flex-1 px-4 py-2 capitalize">email</span>
                 </template>
@@ -58,7 +63,12 @@
           >
             <p class="mb-2">Enter the 6-digit token we sent to {{ email }}</p>
             <div class="flex items-center">
-              <AwesomeFormTextInput v-model="token" class="w-1/4 md:w-1/4">
+              <AwesomeFormTextInput
+                v-model="token"
+                class="w-1/4 md:w-1/4"
+                tabindex="1"
+                @keyup.enter="submitTokenVerification"
+              >
               </AwesomeFormTextInput>
             </div>
           </div>
@@ -80,7 +90,9 @@
               size="sm"
               type="opposite"
               text="Login"
+              tabindex="2"
               @click="submitLoginRequest"
+              @keyup.enter="submitLoginRequest"
             />
           </div>
           <div
@@ -100,6 +112,7 @@
               type="opposite"
               text="Verify"
               @click="submitTokenVerification"
+              @keyup.enter="submitTokenVerification"
             />
           </div>
         </AwesomeCardFooter>
@@ -143,6 +156,8 @@ const submitLoginRequest = async () => {
       emailRedirectTo: redirectTo,
     },
   });
+
+  console.log(error)
 
   loginState.value = error
     ? LoginStateEnum.ErrorSignIn

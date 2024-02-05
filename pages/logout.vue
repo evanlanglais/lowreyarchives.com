@@ -17,5 +17,12 @@ watch(
 </script>
 
 <template>
-  <div>Logging you out...</div>
+  <LayoutPageWrapper>
+    <LayoutPageHeader>
+      <LayoutPageTitle text="Logout" />
+    </LayoutPageHeader>
+    <LayoutPageSection>
+      <p>Logging you out...</p>
+    </LayoutPageSection>
+  </LayoutPageWrapper>
 </template>

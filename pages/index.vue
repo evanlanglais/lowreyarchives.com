@@ -1,14 +1,12 @@
 <template>
-  <LayoutPageHeader>
-    <LayoutPageTitle text=""></LayoutPageTitle>
-  </LayoutPageHeader>
-  <div>
-    <h2>I am index</h2>
-    <p>email: {{ user.email }}</p>
-    <p>first: {{ user.user_metadata.first }}</p>
-    <p>last: {{ user.user_metadata.last }}</p>
-    <p>{{ user }}</p>
-  </div>
+  <LayoutPageWrapper>
+    <LayoutPageHeader>
+      <LayoutPageTitle text="Home" />
+    </LayoutPageHeader>
+    <LayoutPageSection>
+      <LayoutPageSectionTitle text="Welcome to the Lowrey Archives" />
+    </LayoutPageSection>
+  </LayoutPageWrapper>
 </template>
 
 <script setup lang="ts">

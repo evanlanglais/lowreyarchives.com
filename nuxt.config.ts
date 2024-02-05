@@ -4,7 +4,7 @@ export default defineNuxtConfig({
   modules: ["@nuxtjs/supabase", "@nuxtjs/eslint-module"],
   runtimeConfig: {
     public: {
-      baseUrl: process.env.BASE_URL || "http://localhost:3000",
+      baseUrl: "http://localhost:3000",
     },
   },
   supabase: {

@@ -137,13 +137,14 @@ enum LoginStateEnum {
 const client = useSupabaseClient();
 const router = useRouter();
 const loadingIndicator = useLoadingIndicator();
+const runtimeConfig = useRuntimeConfig();
 
 const email = ref("");
 const token = ref("");
 
 const loginState = ref(LoginStateEnum.Init);
 
-const redirectTo = `${useRuntimeConfig().public.baseUrl}/confirm`;
+const redirectTo = `${runtimeConfig.public.baseUrl}/confirm`;
 
 const submitLoginRequest = async () => {
   loadingIndicator.start();

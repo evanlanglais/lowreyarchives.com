@@ -1,19 +1,86 @@
-<script lang="ts" setup>
-const { awesome } = useAppConfig();
+<script setup lang="ts">
+const user = useSupabaseUser();
 
-useHead({
-  title: awesome.name,
-  titleTemplate: `%s - ${awesome.name}`,
+const links = computed(() => {
+  if (user.value) {
+    return [
+      {
+        label: "Home",
+        icon: "i-heroicons-book-open",
+        to: "/",
+      },
+      {
+        label: "Archive",
+        icon: "i-simple-icons-stackblitz",
+        to: "/archive",
+      },
+      {
+        label: "Uploader",
+        icon: "i-heroicons-upload",
+        to: "/uploader",
+      },
+    ];
+  } else {
+    return [
+      {
+        label: "Login",
+        icon: "i-fa-sign-in",
+        to: "/login",
+      },
+    ];
+  }
 });
 </script>
 
 <template>
-  <Body
-    class="antialiased duration-100 transition-colors text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-950"
-  >
+  <UHeader :links="links">
+    <template #logo>
+      <h2>Lowrey Archives</h2>
+    </template>
+
+    <template #right>
+      <UColorModeButton />
+
+      <UButton v-if="!!user" to="/logout" label="Logout" color="green" />
+    </template>
+  </UHeader>
+
+  <UMain>
     <NuxtLayout>
-      <NuxtLoadingIndicator />
       <NuxtPage />
     </NuxtLayout>
-  </Body>
+  </UMain>
+
+  <UFooter>
+    <template #left>
+      <p class="text-gray-500 dark:text-gray-400 text-sm">
+        Copyright © {{ new Date().getFullYear() }} Evan Langlais
+      </p>
+    </template>
+
+    <template #right>
+      <!--      <UButton-->
+      <!--        to="https://x.com/nuxt_js"-->
+      <!--        target="_blank"-->
+      <!--        icon="i-simple-icons-x"-->
+      <!--        color="gray"-->
+      <!--        variant="ghost"-->
+      <!--      />-->
+      <!--      <UButton-->
+      <!--        to="https://discord.com/invite/ps2h6QT"-->
+      <!--        target="_blank"-->
+      <!--        icon="i-simple-icons-discord"-->
+      <!--        color="gray"-->
+      <!--        variant="ghost"-->
+      <!--      />-->
+      <!--      <UButton-->
+      <!--        to="https://github.com/nuxt/nuxt"-->
+      <!--        target="_blank"-->
+      <!--        icon="i-simple-icons-github"-->
+      <!--        color="gray"-->
+      <!--        variant="ghost"-->
+      <!--      />-->
+    </template>
+  </UFooter>
+  <UNotifications />
 </template>

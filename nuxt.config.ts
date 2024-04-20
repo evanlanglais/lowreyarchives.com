@@ -1,7 +1,13 @@
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
 
 export default defineNuxtConfig({
-  modules: ["@nuxtjs/supabase", "@nuxtjs/eslint-module"],
+  modules: [
+    "@nuxtjs/supabase",
+    "@nuxtjs/eslint-module",
+    "@nuxt/ui",
+    "@nuxtjs/fontaine",
+    "@nuxtjs/google-fonts",
+  ],
   runtimeConfig: {
     public: {
       baseUrl: "http://localhost:3000",
@@ -14,7 +20,7 @@ export default defineNuxtConfig({
       exclude: ["/register"],
     },
   },
-  extends: ["@nuxt-awesome/theme"],
+  extends: ["@nuxt/ui-pro"],
   nitro: {
     azure: {
       config: {
@@ -24,5 +30,21 @@ export default defineNuxtConfig({
         },
       },
     },
+  },
+  ui: {
+    icons: ["ph", "simple-icons"],
+  },
+  colorMode: {
+    preference: "dark",
+  },
+  googleFonts: {
+    display: "swap",
+    download: true,
+    families: {
+      "DM+Sans": [400, 500, 600, 700],
+    },
+  },
+  fontMetrics: {
+    fonts: ["DM Sans"],
   },
 });

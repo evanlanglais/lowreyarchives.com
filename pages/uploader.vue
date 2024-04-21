@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <UContainer>
     <h2>I am the uploader page</h2>
     <!--    <LoginCard>-->
     <!--      <div>-->
@@ -18,7 +18,7 @@
     <!--        </FormKit>-->
     <!--      </div>-->
     <!--    </LoginCard>-->
-  </div>
+  </UContainer>
 </template>
 
 <script setup lang="ts">

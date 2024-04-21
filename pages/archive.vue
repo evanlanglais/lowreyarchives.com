@@ -1,39 +1,70 @@
 <template>
-  <UPage>
-    <UPageHeader
-      headline="Archives"
-      title="View the archives"
-      description="Sift through all the different uploads from within your family groups"
-    />
-    <UPageBody>
-      <UPageGrid>
-        <UPageCard v-for="group in myGroups" :key="group.id" target="_blank">
-          <template #title>
-            <span class="line-clamp-2">{{ group.group_name }} Events</span>
-          </template>
-          <template #description>
-            <span class="line-clamp-2">{{ group.group_description }}</span>
-          </template>
-        </UPageCard>
+  <UContainer>
+    <UPage>
+      <UPageHeader
+        headline="Archives"
+        title="View the archives"
+        description="Sift through all the different uploads from within your family groups"
+      />
+      <UPageBody>
+        <div v-for="group in myGroups" :key="group.id">
+          <UDivider size="md" :label="group.group_name" />
+          <UPageGrid v-if="groupEvents.has(group.id)">
+            <NuxtLink
+              v-for="event in groupEvents.get(group.id)"
+              :key="event.id"
+              :to="`/events/${event.id}`"
+            >
+              <UPageCard>
+                <template #title>
+                  <span class="line-clamp-2">{{ event.title }}</span>
+                </template>
+                <template #description>
+                  <span class="line-clamp-2">{{ event.description }}</span>
+                </template>
+              </UPageCard>
+            </NuxtLink>
+          </UPageGrid>
+        </div>
+
         <UPageCard v-if="myGroups == null">
           <template #description>
             <span class="line-clamp-2">You don't belong to any groups!</span>
           </template>
         </UPageCard>
-      </UPageGrid>
-    </UPageBody>
-  </UPage>
+      </UPageBody>
+    </UPage>
+  </UContainer>
 </template>
 
 <script setup lang="ts">
 import type { Tables } from "~/types/supabase";
-
-definePageMeta({ layout: "default" });
+const user = useSupabaseUser();
 
 const myGroups = ref(null as Array<Tables<"groups">> | null);
+const groupEvents = ref(new Map<number, Array<Tables<"events">>>());
 
 const fetchGroups = async () => {
-  myGroups.value = await $fetch("/api/my-groups");
+  if (!user.value) {
+    return;
+  }
+
+  const data = await $fetch(`/api/users/${user.value?.id}/groups`);
+
+  myGroups.value = data;
+
+  data.forEach((group) => fetchGroupEvents(group.id));
+};
+
+const fetchGroupEvents = async (groupId: number) => {
+  try {
+    groupEvents.value.set(
+      groupId,
+      await $fetch(`/api/groups/${groupId}/events`),
+    );
+  } catch (e) {
+    console.error(e);
+  }
 };
 
 fetchGroups();

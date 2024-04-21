@@ -14,11 +14,6 @@ const links = computed(() => {
         icon: "i-simple-icons-stackblitz",
         to: "/archive",
       },
-      {
-        label: "Uploader",
-        icon: "i-heroicons-upload",
-        to: "/uploader",
-      },
     ];
   } else {
     return [

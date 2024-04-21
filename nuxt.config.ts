@@ -1,4 +1,5 @@
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
+import { vite as vidstack } from "vidstack/plugins";
 
 export default defineNuxtConfig({
   modules: [
@@ -46,5 +47,13 @@ export default defineNuxtConfig({
   },
   fontMetrics: {
     fonts: ["DM Sans"],
+  },
+  vue: {
+    compilerOptions: {
+      isCustomElement: (tag) => tag.startsWith("media-"),
+    },
+  },
+  vite: {
+    plugins: [vidstack()],
   },
 });

@@ -1,15 +1,9 @@
 <template>
-  <LayoutPageWrapper>
-    <LayoutPageHeader>
-      <LayoutPageTitle text="Home" />
-    </LayoutPageHeader>
-    <LayoutPageSection>
-      <LayoutPageSectionTitle text="Welcome to the Lowrey Archives" />
-    </LayoutPageSection>
-  </LayoutPageWrapper>
+  <ULandingSection
+    headline="Welcome"
+    title="The Lowrey Archives"
+    description="A simple, safe, and centralized place to upload and view family pictures, videos, and everything else!"
+  />
 </template>
 
-<script setup lang="ts">
-const user = useSupabaseUser();
-definePageMeta({ layout: "default" });
-</script>
+<script setup lang="ts"></script>

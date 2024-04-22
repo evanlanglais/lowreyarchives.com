@@ -2,35 +2,27 @@ import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
 import { Database, Tables } from "~/types/supabase";
 
 export default defineEventHandler(async (event) => {
-  const user = await serverSupabaseUser(event);
+  const id = getRouterParam(event, "id");
 
-  if (!user) {
-    console.log("idk why");
-    console.log(user);
+  if (!id) {
     throw createError({
-      statusCode: 401,
-      statusMessage: "User not authenticated!",
+      statusCode: 400,
+      statusMessage: "Invalid Event ID",
     });
   }
 
   const client = await serverSupabaseClient(event);
 
-  // const { data, error } = await client
-  //   .from("group-users")
-  //   .select(`...groups (*)`)
-  //   .eq("user_id", user.id)
-  //   .returns<Array<Tables<"groups">>>();
-
   const { data, error } = await client
-    .from("users")
+    .from("group-users")
     .select(`...groups (*)`)
-    .eq("id", user.id)
+    .eq("user_id", id)
     .returns<Array<Tables<"groups">>>();
 
   if (error) {
     throw createError({
       statusCode: 500,
-      statusMessage: "User not authenticated!",
+      statusMessage: "Unable to load groups",
     });
   }
 

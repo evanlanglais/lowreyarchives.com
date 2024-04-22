@@ -8,23 +8,32 @@
       />
       <UPageBody>
         <div v-for="group in myGroups" :key="group.id">
-          <UDivider size="md" :label="group.group_name" />
-          <UPageGrid v-if="groupEvents.has(group.id)">
-            <NuxtLink
-              v-for="event in groupEvents.get(group.id)"
-              :key="event.id"
-              :to="`/events/${event.id}`"
-            >
-              <UPageCard>
-                <template #title>
-                  <span class="line-clamp-2">{{ event.title }}</span>
-                </template>
-                <template #description>
-                  <span class="line-clamp-2">{{ event.description }}</span>
-                </template>
-              </UPageCard>
-            </NuxtLink>
-          </UPageGrid>
+          <div
+            v-if="
+              groupEvents.has(group.id) && groupEvents.get(group.id)?.length > 0
+            "
+          >
+            <UDivider size="md" :label="group.group_name" />
+            <UPageGrid>
+              <NuxtLink
+                v-for="event in groupEvents.get(group.id)"
+                :key="event.id"
+                :to="`/events/${event.id}`"
+              >
+                <UPageCard>
+                  <template #title>
+                    <span class="line-clamp-2">{{ event.title }}</span>
+                  </template>
+                  <template #description>
+                    <span class="line-clamp-2">{{ event.description }}</span>
+                    <span class="line-clamp-2">{{
+                      getEventDateString(event)
+                    }}</span>
+                  </template>
+                </UPageCard>
+              </NuxtLink>
+            </UPageGrid>
+          </div>
         </div>
 
         <UPageCard v-if="myGroups == null">
@@ -38,6 +47,7 @@
 </template>
 
 <script setup lang="ts">
+import { DateTime } from "luxon";
 import type { Tables } from "~/types/supabase";
 const user = useSupabaseUser();
 
@@ -58,14 +68,32 @@ const fetchGroups = async () => {
 
 const fetchGroupEvents = async (groupId: number) => {
   try {
-    groupEvents.value.set(
-      groupId,
-      await $fetch(`/api/groups/${groupId}/events`),
+    let data = await $fetch(`/api/groups/${groupId}/events`);
+
+    data = data.sort(
+      (a, b) =>
+        DateTime.fromISO(a.start_date).diff(DateTime.fromISO(b.start_date))
+          .minutes,
     );
+
+    groupEvents.value.set(groupId, data);
   } catch (e) {
     console.error(e);
   }
 };
+
+function getEventDateString(event: Tables<"events">): string {
+  const startDate = DateTime.fromISO(event.start_date);
+  const endDate = DateTime.fromISO(event.end_date);
+
+  let returnString = startDate.toLocaleString(DateTime.DATE_MED);
+
+  if (!startDate.equals(endDate)) {
+    returnString += ` - ${endDate.toLocaleString(DateTime.DATE_MED)}`;
+  }
+
+  return returnString;
+}
 
 fetchGroups();
 </script>

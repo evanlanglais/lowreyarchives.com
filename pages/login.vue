@@ -2,7 +2,7 @@
   <UContainer>
     <UPage>
       <UPageHeader title="Login" />
-      <UPageBody class="h-screen flex items-center justify-center overlay">
+      <UPageBody class="flex items-center justify-center">
         <UCard class="max-w-sm w-full">
           <UAuthForm
             v-if="

@@ -29,8 +29,7 @@ const { data: mediaUrl } = await useAsyncData(
       case MediaType.Photo:
         return props.media.url;
       case MediaType.BucketVideo: {
-        console.log(`video url: ${props.media.url}`);
-        const { data, error } = await supabase.storage
+        const { data } = await supabase.storage
           .from("video")
           .createSignedUrl(props.media.url, 3600);
 
@@ -42,32 +41,6 @@ const { data: mediaUrl } = await useAsyncData(
     }
   },
 );
-
-// async function getMediaUrl() {
-//   switch (props.media.type) {
-//     case MediaType.Youtube:
-//     case MediaType.Video:
-//     case MediaType.Photo:
-//       mediaUrl.value = props.media.url;
-//       break;
-//     case MediaType.BucketVideo: {
-//       const { data, error } = await supabase.storage
-//         .from("video")
-//         .createSignedUrl(props.media.url, 3600);
-//       if (error) throw error;
-//
-//       mediaUrl.value = data?.signedUrl;
-//       break;
-//     }
-//     default:
-//       console.error("Unknown media type");
-//       break;
-//   }
-// }
-//
-// onMounted(() => {
-//   getMediaUrl();
-// });
 </script>
 
 <template>

@@ -35,15 +35,6 @@ const links = [
   },
 ];
 
-// const { data: eventData } = await useAsyncData(`event-${eventId}`, async () => {
-//   const [info, media] = await Promise.all([
-//     $fetch(`/api/events/${eventId}`),
-//     $fetch(`/api/events/${eventId}/media`),
-//   ]);
-//
-//   return { info, media };
-// });
-
 const headline = computed(() => {
   if (!eventInfo.value) {
     return "";

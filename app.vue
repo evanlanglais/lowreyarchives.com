@@ -40,11 +40,9 @@ const links = computed(() => {
     </template>
   </UHeader>
 
-  <UMain>
-    <NuxtLayout>
-      <NuxtPage />
-    </NuxtLayout>
-  </UMain>
+  <NuxtLayout>
+    <NuxtPage />
+  </NuxtLayout>
 
   <UFooter>
     <template #left>

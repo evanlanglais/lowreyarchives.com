@@ -7,14 +7,18 @@
         description="Sift through all the different uploads from within your family groups"
       />
       <UPageBody>
+        <UProgress v-if="groupLoading" animation="carousel" />
         <div v-for="group in myGroups" :key="group.id">
-          <div
-            v-if="
-              groupEvents.has(group.id) && groupEvents.get(group.id)?.length > 0
-            "
-          >
-            <UDivider size="md" :label="group.group_name" />
-            <UPageGrid>
+          <UDivider size="md" :label="group.group_name" class="mb-2" />
+          <UProgress v-if="eventLoading" animation="carousel" />
+          <div v-else>
+            <UPageGrid
+              v-if="
+                !!groupEvents &&
+                groupEvents.has(group.id) &&
+                groupEvents.get(group.id).length > 0
+              "
+            >
               <NuxtLink
                 v-for="event in groupEvents.get(group.id)"
                 :key="event.id"
@@ -33,10 +37,11 @@
                 </UPageCard>
               </NuxtLink>
             </UPageGrid>
+            <span>No Events</span>
           </div>
         </div>
 
-        <UPageCard v-if="myGroups == null">
+        <UPageCard v-if="!groupLoading && myGroups == null">
           <template #description>
             <span class="line-clamp-2">You don't belong to any groups!</span>
           </template>
@@ -48,39 +53,49 @@
 
 <script setup lang="ts">
 import { DateTime } from "luxon";
+import { useAsyncData } from "#app";
 import type { Tables } from "~/types/supabase";
 const user = useSupabaseUser();
 
-const myGroups = ref(null as Array<Tables<"groups">> | null);
-const groupEvents = ref(new Map<number, Array<Tables<"events">>>());
+const { data: myGroups, pending: groupLoading } = await useFetch(
+  `/api/users/${user.value?.id}/groups`,
+  {
+    lazy: true,
+    server: false,
+  },
+);
 
-const fetchGroups = async () => {
-  if (!user.value) {
-    return;
-  }
+const { data: groupEvents, pending: eventLoading } = await useAsyncData(
+  async () => {
+    if (!myGroups.value) {
+      return;
+    }
 
-  const data = await $fetch(`/api/users/${user.value?.id}/groups`);
+    const groupedEvents = new Map<number, Array<Tables<"events">>>();
 
-  myGroups.value = data;
-
-  data.forEach((group) => fetchGroupEvents(group.id));
-};
-
-const fetchGroupEvents = async (groupId: number) => {
-  try {
-    let data = await $fetch(`/api/groups/${groupId}/events`);
-
-    data = data.sort(
-      (a, b) =>
-        DateTime.fromISO(a.start_date).diff(DateTime.fromISO(b.start_date))
-          .minutes,
+    await Promise.all(
+      myGroups.value.map((group) =>
+        $fetch(`/api/groups/${group.id}/events`).then((data) => {
+          data.sort((a, b) =>
+            DateTime.fromISO(a.start_date) < DateTime.fromISO(b.start_date)
+              ? -1
+              : DateTime.fromISO(a.start_date) > DateTime.fromISO(b.start_date)
+                ? 1
+                : 0,
+          );
+          groupedEvents.set(group.id, data);
+        }),
+      ),
     );
 
-    groupEvents.value.set(groupId, data);
-  } catch (e) {
-    console.error(e);
-  }
-};
+    return groupedEvents;
+  },
+  {
+    lazy: true,
+    server: false,
+    watch: [myGroups],
+  },
+);
 
 function getEventDateString(event: Tables<"events">): string {
   const startDate = DateTime.fromISO(event.start_date);
@@ -94,6 +109,4 @@ function getEventDateString(event: Tables<"events">): string {
 
   return returnString;
 }
-
-fetchGroups();
 </script>

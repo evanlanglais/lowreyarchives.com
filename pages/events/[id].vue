@@ -31,7 +31,7 @@ const links = [
   {
     label: `${eventInfo.value ? eventInfo.value.title : "Loading..."}`,
     icon: "i-heroicons-link",
-    to: `events/${eventId}`,
+    to: `/events/${eventId}`,
   },
 ];
 

@@ -11,14 +11,15 @@ export default defineNuxtConfig({
   ],
   runtimeConfig: {
     public: {
-      baseUrl: "http://localhost:3000",
+      baseUrl: "https://lowreyarchives.com",
     },
   },
   supabase: {
     redirectOptions: {
       login: "/login",
       callback: "/confirm",
-      exclude: ["/register"],
+      exclude: [],
+      cookieRedirect: true,
     },
   },
   extends: ["@nuxt/ui-pro"],

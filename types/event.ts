@@ -8,5 +8,4 @@ export interface EventWrapper {
   image: string | null;
   start_date: string;
   end_date: string;
-  media: Array<MediaWrapper>;
 }

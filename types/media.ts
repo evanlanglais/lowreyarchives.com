@@ -3,6 +3,7 @@ export enum MediaType {
   Photo,
   Youtube,
   Video,
+  BucketVideo,
 }
 
 export interface MediaWrapper {

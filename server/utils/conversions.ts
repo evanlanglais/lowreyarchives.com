@@ -23,6 +23,8 @@ export function mediaTypeFromDatabaseMediaType(
       return MediaType.Photo;
     case "video_url":
       return MediaType.Video;
+    case "bucket_video":
+      return MediaType.BucketVideo;
     default:
       throw new Error(`Unknown media type "${mediaType}"`);
   }

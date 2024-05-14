@@ -25,13 +25,7 @@ export default defineEventHandler(async (event): Promise<EventWrapper> => {
        title,
        description,
        start_date,
-       end_date,
-       media (
-         id,
-         description,
-         media_type,
-         media_url
-       )`,
+       end_date`,
     )
     .eq("id", id)
     .single();
@@ -50,8 +44,5 @@ export default defineEventHandler(async (event): Promise<EventWrapper> => {
     start_date: data.start_date,
     end_date: data.end_date,
     image: null,
-    media: (data.media as Array<Tables<"media">>).map((mediaRow) =>
-      mediaWrapperFromDatabaseMediaRow(mediaRow),
-    ),
   };
 });

@@ -3,34 +3,54 @@ import { DateTime } from "luxon";
 import type { Tables } from "~/types/supabase";
 import type { EventWrapper } from "~/types/event";
 import { MediaType, type MediaWrapper } from "~/types/media";
-import ModernPlayer from "~/components/ModernPlayer.vue";
+import MediaViewer from "~/components/MediaViewer.vue";
 const loadingIndicator = useLoadingIndicator();
 const route = useRoute();
 const eventId = route.params.id;
 
-const event = ref(null as EventWrapper | null);
+const { data: eventInfo } = await useFetch(`/api/events/${eventId}`);
+const { data: eventMedia, pending: mediaPending } = await useFetch(
+  `/api/events/${eventId}/media`,
+  {
+    lazy: true,
+    server: false,
+  },
+);
 
-const fetchEvent = async () => {
-  loadingIndicator.start();
+const links = [
+  {
+    label: "Home",
+    icon: "i-heroicons-home",
+    to: "/",
+  },
+  {
+    label: "Archive",
+    icon: "i-heroicons-square-3-stack-3d",
+    to: "/archive",
+  },
+  {
+    label: `${eventInfo.value ? eventInfo.value.title : "Loading..."}`,
+    icon: "i-heroicons-link",
+    to: `events/${eventId}`,
+  },
+];
 
-  try {
-    event.value = await $fetch(`/api/events/${eventId}`);
-  } catch (e) {
-    console.error(e);
-  }
-
-  loadingIndicator.finish();
-};
-
-fetchEvent();
+// const { data: eventData } = await useAsyncData(`event-${eventId}`, async () => {
+//   const [info, media] = await Promise.all([
+//     $fetch(`/api/events/${eventId}`),
+//     $fetch(`/api/events/${eventId}/media`),
+//   ]);
+//
+//   return { info, media };
+// });
 
 const headline = computed(() => {
-  if (!event.value) {
+  if (!eventInfo.value) {
     return "";
   }
 
-  const startDate = DateTime.fromISO(event.value.start_date);
-  const endDate = DateTime.fromISO(event.value.end_date);
+  const startDate = DateTime.fromISO(eventInfo.value.start_date);
+  const endDate = DateTime.fromISO(eventInfo.value.end_date);
 
   if (startDate.equals(endDate)) {
     return startDate.toLocaleString(DateTime.DATE_MED);
@@ -40,53 +60,64 @@ const headline = computed(() => {
 });
 
 const videos = computed((): Array<MediaWrapper> => {
-  if (!event.value) {
+  if (!eventMedia.value) {
     return [];
   }
 
-  return event.value.media.filter(
+  return eventMedia.value.filter(
     (media) =>
-      media.type === MediaType.Video || media.type === MediaType.Youtube,
+      media.type === MediaType.Video ||
+      media.type === MediaType.Youtube ||
+      media.type === MediaType.BucketVideo,
   );
 });
 
 const photos = computed((): Array<MediaWrapper> => {
-  if (!event.value) {
+  if (!eventMedia.value) {
     return [];
   }
 
-  return event.value.media.filter((media) => media.type === MediaType.Photo);
+  return eventMedia.value.filter((media) => media.type === MediaType.Photo);
 });
 </script>
 
 <template>
   <UContainer>
     <UPage>
+      <UBreadcrumb :links="links" class="mt-2 mb-2" />
       <UPageHeader
-        :title="!!event ? event.title : ''"
-        :description="!!event && !!event.description ? event.description : ''"
+        :title="!!eventInfo ? eventInfo.title : ''"
+        :description="
+          !!eventInfo && !!eventInfo.description ? eventInfo.description : ''
+        "
         :headline="headline"
       />
       <UPageBody>
-        <UDivider size="md">Videos</UDivider>
-        <UPageGrid v-if="videos.length > 0">
-          <UPageCard
-            v-for="video in videos"
-            :key="video.id"
-            :description="video.description ?? ''"
-          >
-            <ModernPlayer :src="video.url" />
-          </UPageCard>
-        </UPageGrid>
-        <UDivider size="md">Photos</UDivider>
-        <UPageGrid v-if="photos.length > 0">
-          <UPageCard
-            v-for="photo in photos"
-            :key="photo.id"
-            :description="photo.description ?? ''"
-          >
-          </UPageCard>
-        </UPageGrid>
+        <div v-if="!mediaPending">
+          <div v-if="videos.length > 0">
+            <UDivider size="md" class="mb-4">Videos</UDivider>
+            <UPageGrid>
+              <MediaViewer
+                v-for="video in videos"
+                :key="video.id"
+                :media="video"
+              >
+              </MediaViewer>
+            </UPageGrid>
+          </div>
+          <div v-if="photos.length > 0" class="mb-4">
+            <UDivider size="md">Photos</UDivider>
+            <UPageGrid>
+              <MediaViewer
+                v-for="photo in photos"
+                :key="photo.id"
+                :media="photo"
+              >
+              </MediaViewer>
+            </UPageGrid>
+          </div>
+        </div>
+        <UProgress v-else animation="carousel"></UProgress>
       </UPageBody>
     </UPage>
   </UContainer>

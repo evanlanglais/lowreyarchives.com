@@ -16,6 +16,8 @@ const { data: groupEvents, pending: groupEventsLoading } = await useFetch(
   `/api/groups/${groupId}/events`,
   {
     key: `group-${groupId}-events`,
+    lazy: true,
+    server: false,
   },
 );
 

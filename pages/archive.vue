@@ -37,7 +37,7 @@
                 </UPageCard>
               </NuxtLink>
             </UPageGrid>
-            <span class="line-clamp-2" v-else>No Events</span>
+            <span v-else class="line-clamp-2">No Events</span>
           </div>
         </div>
 

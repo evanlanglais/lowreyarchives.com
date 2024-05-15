@@ -1,18 +1,31 @@
 <script setup lang="ts">
 const user = useSupabaseUser();
 
+const { data: userGroups } = await useFetch(
+  `/api/users/${user.value?.id}/groups`,
+);
+
 const links = computed(() => {
   if (user.value) {
     return [
       {
         label: "Home",
-        icon: "i-heroicons-book-open",
+        icon: "i-heroicons-home",
         to: "/",
       },
       {
         label: "Archive",
-        icon: "i-simple-icons-stackblitz",
+        icon: "i-heroicons-archive-box",
         to: "/archive",
+        children: userGroups.value
+          ? userGroups.value.map((item) => {
+              return {
+                label: item.group_name,
+                icon: "i-heroicons-user-group",
+                to: `/groups/${item.id}`,
+              };
+            })
+          : [],
       },
     ];
   } else {

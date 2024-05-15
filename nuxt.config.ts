@@ -57,4 +57,7 @@ export default defineNuxtConfig({
   vite: {
     plugins: [vidstack()],
   },
+  experimental: {
+    payloadExtraction: true,
+  },
 });

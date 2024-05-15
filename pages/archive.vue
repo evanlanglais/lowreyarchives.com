@@ -22,7 +22,7 @@
               <NuxtLink
                 v-for="event in groupEvents.get(group.id)"
                 :key="event.id"
-                :to="`/events/${event.id}`"
+                :to="`/groups/${group.id}/events/${event.id}`"
               >
                 <UPageCard>
                   <template #title>
@@ -37,7 +37,7 @@
                 </UPageCard>
               </NuxtLink>
             </UPageGrid>
-            <span>No Events</span>
+            <span class="line-clamp-2" v-else>No Events</span>
           </div>
         </div>
 
@@ -60,8 +60,7 @@ const user = useSupabaseUser();
 const { data: myGroups, pending: groupLoading } = await useFetch(
   `/api/users/${user.value?.id}/groups`,
   {
-    lazy: true,
-    server: false,
+    key: `user-${user.value?.id}-groups`,
   },
 );
 

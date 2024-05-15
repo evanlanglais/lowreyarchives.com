@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import { DateTime } from "luxon";
-import type { Tables } from "~/types/supabase";
-import type { EventWrapper } from "~/types/event";
 import { MediaType, type MediaWrapper } from "~/types/media";
 import MediaViewer from "~/components/MediaViewer.vue";
-const loadingIndicator = useLoadingIndicator();
 const route = useRoute();
-const eventId = route.params.id;
+const groupId = route.params.groupId;
+const eventId = route.params.eventId;
 
-const { data: eventInfo } = await useFetch(`/api/events/${eventId}`);
+const { data: groupInfo } = await useFetch(`/api/groups/${groupId}`, {
+  key: `group-${groupId}-info`,
+});
+const { data: eventInfo } = await useFetch(`/api/events/${eventId}`, {
+  key: `event-${eventId}-info`,
+});
 const { data: eventMedia, pending: mediaPending } = await useFetch(
   `/api/events/${eventId}/media`,
   {
+    key: `event-${eventId}-media`,
     lazy: true,
     server: false,
   },
@@ -25,13 +29,18 @@ const links = [
   },
   {
     label: "Archive",
-    icon: "i-heroicons-square-3-stack-3d",
+    icon: "i-heroicons-archive-box",
     to: "/archive",
   },
   {
+    label: `${groupInfo.value ? groupInfo.value.name : "Loading..."}`,
+    icon: "i-heroicons-user-group",
+    to: `/groups/${groupId}`,
+  },
+  {
     label: `${eventInfo.value ? eventInfo.value.title : "Loading..."}`,
-    icon: "i-heroicons-link",
-    to: `/events/${eventId}`,
+    icon: "i-heroicons-calendar",
+    to: `/groups/${groupId}/events/${eventId}`,
   },
 ];
 

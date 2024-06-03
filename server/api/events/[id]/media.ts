@@ -1,9 +1,9 @@
-import { DateTime } from "luxon";
+import { useDataCache } from "#nuxt-multi-cache/composables";
 import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
 import { Database, Tables } from "~/types/supabase";
-import { EventWrapper } from "~/types/event";
 import { mediaWrapperFromDatabaseMediaRow } from "~/server/utils/conversions";
 import { MediaWrapper } from "~/types/media";
+import { useEventMediaCacheKey } from "~/composable/event";
 
 export default defineEventHandler(
   async (event): Promise<Array<MediaWrapper>> => {
@@ -17,6 +17,19 @@ export default defineEventHandler(
     }
 
     const id = +idParam;
+
+    const cacheKey = useEventMediaCacheKey(id.toString());
+
+    const { value, addToCache } = await useDataCache<MediaWrapper[]>(
+      cacheKey,
+      event,
+    );
+    if (value) {
+      console.log(`cache hit ${cacheKey}`);
+      return value;
+    }
+
+    console.log(`cache miss ${cacheKey}`);
 
     const client = await serverSupabaseClient(event);
 
@@ -33,6 +46,12 @@ export default defineEventHandler(
       });
     }
 
-    return data.map((mediaRow) => mediaWrapperFromDatabaseMediaRow(mediaRow));
+    const transformedData = data.map((mediaRow) =>
+      mediaWrapperFromDatabaseMediaRow(mediaRow),
+    );
+
+    await addToCache(transformedData, [], 3600);
+
+    return transformedData;
   },
 );

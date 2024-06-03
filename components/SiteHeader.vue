@@ -1,14 +1,6 @@
 <script setup lang="ts">
 const user = useSupabaseUser();
-
-const { data: userGroups, execute } = useFetch(
-  `/api/users/${user.value?.id}/groups`,
-  {
-    key: `user-${user.value ? user.value.id : ""}-groups`,
-    immediate: false,
-    lazy: true,
-  },
-);
+const { data: userGroups } = await useFetch(`/api/users/me/groups`);
 
 const links = computed(() => {
   if (user.value) {
@@ -75,12 +67,6 @@ const asideLinks = computed(() => {
         to: "/login",
       },
     ];
-  }
-});
-
-onMounted(async () => {
-  if (user.value) {
-    await execute();
   }
 });
 </script>

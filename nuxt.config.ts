@@ -8,6 +8,7 @@ export default defineNuxtConfig({
     "@nuxt/ui",
     "@nuxtjs/fontaine",
     "@nuxtjs/google-fonts",
+    "nuxt-multi-cache",
   ],
   runtimeConfig: {
     public: {
@@ -28,7 +29,7 @@ export default defineNuxtConfig({
       config: {
         // ...
         platform: {
-          apiRuntime: "node:18",
+          apiRuntime: "node:20",
         },
       },
     },
@@ -59,5 +60,18 @@ export default defineNuxtConfig({
   },
   experimental: {
     payloadExtraction: true,
+  },
+  multiCache: {
+    data: {
+      enabled: true,
+    },
+    // Cache Management API.
+    api: {
+      enabled: true,
+
+      // Use a different prefix for the API endpoints.
+      prefix: "/api/nuxt-multi-cache",
+    },
+    debug: true,
   },
 });

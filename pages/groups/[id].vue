@@ -1,41 +1,23 @@
 <script setup lang="ts">
 import { DateTime } from "luxon";
-import { useAsyncData } from "#app";
-import type { Tables } from "~/types/supabase";
+import { useFlattenParam } from "~/composable/utils";
+import type { EventWrapper } from "~/types/event";
 const route = useRoute();
-const groupId = route.params.id;
+const groupId = useFlattenParam(route.params.id);
 
-const { data: groupInfo, pending: groupInfoLoading } = await useFetch(
-  `/api/groups/${groupId}`,
-  {
-    key: `group-${groupId}-info`,
-  },
-);
-
-const { data: groupEvents, pending: groupEventsLoading } = await useFetch(
-  `/api/groups/${groupId}/events`,
-  {
-    key: `group-${groupId}-events`,
-    lazy: true,
-    server: false,
-  },
-);
-
-const sortedGroupEvents = computed(() => {
-  if (!groupEvents.value) {
-    return;
-  }
-
-  const copy = groupEvents.value;
-
-  return copy.sort((a, b) =>
-    DateTime.fromISO(a.start_date) < DateTime.fromISO(b.start_date)
-      ? -1
-      : DateTime.fromISO(a.start_date) > DateTime.fromISO(b.start_date)
-        ? 1
-        : 0,
-  );
-});
+const [{ data: groupInfo }, { data: groupEvents }] = await Promise.all([
+  useFetch(`/api/groups/${groupId}`),
+  useFetch(`/api/groups/${groupId}/events`, {
+    transform: (input) =>
+      input.sort((a, b) =>
+        DateTime.fromISO(a.start_date) < DateTime.fromISO(b.start_date)
+          ? -1
+          : DateTime.fromISO(a.start_date) > DateTime.fromISO(b.start_date)
+            ? 1
+            : 0,
+      ),
+  }),
+]);
 
 const links = [
   {
@@ -49,13 +31,13 @@ const links = [
     to: "/archive",
   },
   {
-    label: `${groupInfo.value ? groupInfo.value.name : "Loading..."}`,
+    label: `${groupInfo.value ? groupInfo.value.group_name : "Loading..."}`,
     icon: "i-heroicons-user-group",
     to: `/groups/${groupId}`,
   },
 ];
 
-function getEventDateString(event: Tables<"events">): string {
+function getEventDateString(event: EventWrapper): string {
   const startDate = DateTime.fromISO(event.start_date);
   const endDate = DateTime.fromISO(event.end_date);
 
@@ -74,17 +56,18 @@ function getEventDateString(event: Tables<"events">): string {
     <UPage>
       <UBreadcrumb :links="links" class="mt-2 mb-2" />
       <UPageHeader
-        :title="!!groupInfo ? groupInfo.name : ''"
+        :title="!!groupInfo ? groupInfo.group_name : ''"
         :description="
-          !!groupInfo && !!groupInfo.description ? groupInfo.description : ''
+          !!groupInfo && !!groupInfo.group_description
+            ? groupInfo.group_description
+            : ''
         "
       />
       <UPageBody>
-        <UProgress v-if="groupEventsLoading" animation="carousel" />
-        <div v-else>
-          <UPageGrid v-if="!!sortedGroupEvents && sortedGroupEvents.length > 0">
+        <div>
+          <UPageGrid v-if="!!groupEvents && groupEvents.length > 0">
             <NuxtLink
-              v-for="event in sortedGroupEvents"
+              v-for="event in groupEvents"
               :key="event.id"
               :to="`/groups/${groupId}/events/${event.id}`"
             >

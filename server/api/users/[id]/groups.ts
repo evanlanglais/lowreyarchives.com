@@ -1,15 +1,31 @@
-import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
-import { Database, Tables } from "~/types/supabase";
+import { useDataCache } from "#nuxt-multi-cache/composables";
+import { serverSupabaseClient } from "#supabase/server";
+import { Tables } from "~/types/supabase";
+import { GroupWrapper } from "~/types/group";
+import { useUserGroupsCacheKey } from "~/composable/user";
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<GroupWrapper[]> => {
   const id = getRouterParam(event, "id");
 
   if (!id) {
     throw createError({
       statusCode: 400,
-      statusMessage: "Invalid Event ID",
+      statusMessage: "Invalid user ID",
     });
   }
+
+  const cacheKey = useUserGroupsCacheKey(id);
+
+  const { value, addToCache } = await useDataCache<GroupWrapper[]>(
+    cacheKey,
+    event,
+  );
+  if (value) {
+    console.log(`cache hit ${cacheKey}`);
+    return value;
+  }
+
+  console.log(`cache miss ${cacheKey}`);
 
   const client = await serverSupabaseClient(event);
 
@@ -25,6 +41,8 @@ export default defineEventHandler(async (event) => {
       statusMessage: "Unable to load groups",
     });
   }
+
+  await addToCache(data, [], 3600);
 
   return data;
 });

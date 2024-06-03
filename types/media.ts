@@ -6,10 +6,10 @@ export enum MediaType {
   BucketVideo,
 }
 
-export interface MediaWrapper {
+export type MediaWrapper = {
   id: number;
   description: string | null;
   image: string | null;
   url: string;
   type: MediaType;
-}
+};

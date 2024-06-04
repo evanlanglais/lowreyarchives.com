@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const user = useSupabaseUser();
-const { data: userGroups } = await useFetch(`/api/users/me/groups`);
+const { data: userGroups } = await useFetch(`/api/users/me/groups`, { watch: [user] });
 
 const links = computed(() => {
   if (user.value) {

@@ -1,7 +1,8 @@
 import { serverSupabaseUser } from "#supabase/server";
 import useS3Client from "~/server/utils/use-s3-client";
+const runtimeConfig = useRuntimeConfig();
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<void> => {
   const user = await serverSupabaseUser(event);
   if (!user) {
     throw createError({
@@ -16,7 +17,7 @@ export default defineEventHandler(async (event) => {
   const key = body.key;
 
   const params = {
-    Bucket: "videoarchive1",
+    Bucket: runtimeConfig.minioBucket,
     Key: key,
     UploadId: uploadId,
     MultipartUpload: {

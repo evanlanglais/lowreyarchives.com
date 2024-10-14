@@ -24,6 +24,10 @@ const links = computed(() => {
             })
           : [],
       },
+      {
+        label: "Uploader",
+        to: "/uploader",
+      },
     ];
   } else {
     return [

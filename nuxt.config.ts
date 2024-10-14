@@ -14,6 +14,9 @@ export default defineNuxtConfig({
     public: {
       baseUrl: "https://lowreyarchives.com",
     },
+    minioKey: "",
+    minioKeySecret: "",
+    minioBucket: "fa-archive",
   },
   supabase: {
     redirectOptions: {

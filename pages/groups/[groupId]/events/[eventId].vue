@@ -8,6 +8,8 @@ const route = useRoute();
 const groupId = useFlattenParam(route.params.groupId);
 const eventId = useFlattenParam(route.params.eventId);
 
+const isMediaUploaderOpen = ref(false);
+
 const [{ data: groupInfo }, { data: eventInfo }, { data: eventMedia }] =
   await Promise.all([
     useFetch(`/api/groups/${groupId}`),
@@ -78,6 +80,13 @@ const photos = computed((): Array<MediaWrapper> => {
           !!eventInfo && !!eventInfo.description ? eventInfo.description : ''
         "
         :headline="headline"
+        :links="[
+          {
+            label: 'Upload Media',
+            click: () => (isMediaUploaderOpen = true),
+            icon: 'i-heroicons-arrow-up-tray',
+          },
+        ]"
       />
       <UPageBody>
         <div v-if="videos.length > 0">
@@ -96,6 +105,9 @@ const photos = computed((): Array<MediaWrapper> => {
         </div>
       </UPageBody>
     </UPage>
+    <UModal v-model="isMediaUploaderOpen">
+      <MediaUploader />
+    </UModal>
   </UContainer>
 </template>
 

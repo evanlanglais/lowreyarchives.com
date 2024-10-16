@@ -10,3 +10,11 @@ export const useFlattenParam = (input: string | string[]): string => {
   // This should never be reached if the type is correctly string | string[]
   throw createError({ statusMessage: "Unknown or invalid input type!" });
 };
+
+export function generateGUID(): string {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}

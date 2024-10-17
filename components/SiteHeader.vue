@@ -1,10 +1,17 @@
 <script setup lang="ts">
+import type {GroupWrapper} from "~/types/group";
+
 const user = useSupabaseUser();
-const { data: userGroups } = await useFetch(
-  `/api/users/${user.value?.id}/groups`,
-  {
-    watch: [user.value?.id],
+const userGroups = ref<GroupWrapper[]>();
+
+watch(
+  user,
+  async () => {
+    if (user.value) {
+      userGroups.value = await $fetch(`/api/users/${user.value.id}/groups`);
+    }
   },
+  { immediate: true },
 );
 
 const links = computed(() => {

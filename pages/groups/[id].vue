@@ -5,19 +5,22 @@ import type { EventWrapper } from "~/types/event";
 const route = useRoute();
 const groupId = useFlattenParam(route.params.id);
 
-const [{ data: groupInfo }, { data: groupEvents }] = await Promise.all([
-  useFetch(`/api/groups/${groupId}`),
-  useFetch(`/api/groups/${groupId}/events`, {
-    transform: (input) =>
-      input.sort((a, b) =>
-        DateTime.fromISO(a.start_date) < DateTime.fromISO(b.start_date)
-          ? -1
-          : DateTime.fromISO(a.start_date) > DateTime.fromISO(b.start_date)
-            ? 1
-            : 0,
-      ),
-  }),
-]);
+const [{ data: groupInfo }, { data: groupEvents, status: groupEventStatus }] =
+  await Promise.all([
+    useFetch(`/api/groups/${groupId}`),
+    useFetch(`/api/groups/${groupId}/events`, {
+      transform: (input) =>
+        input.sort((a, b) =>
+          DateTime.fromISO(a.start_date) < DateTime.fromISO(b.start_date)
+            ? -1
+            : DateTime.fromISO(a.start_date) > DateTime.fromISO(b.start_date)
+              ? 1
+              : 0,
+        ),
+      lazy: true,
+      server: false,
+    }),
+  ]);
 
 const links = [
   {
@@ -64,7 +67,11 @@ function getEventDateString(event: EventWrapper): string {
         "
       />
       <UPageBody>
-        <div>
+        <ClientOnly>
+          <UProgress
+            v-if="groupEventStatus == 'pending'"
+            animation="carousel"
+          />
           <UPageGrid v-if="!!groupEvents && groupEvents.length > 0">
             <NuxtLink
               v-for="event in groupEvents"
@@ -85,7 +92,7 @@ function getEventDateString(event: EventWrapper): string {
             </NuxtLink>
           </UPageGrid>
           <UDivider v-else label="No Events" />
-        </div>
+        </ClientOnly>
       </UPageBody>
     </UPage>
   </UContainer>

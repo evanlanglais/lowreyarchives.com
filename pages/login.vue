@@ -137,8 +137,6 @@ const submitLoginRequest = async (data: any) => {
     },
   });
 
-  console.log(error);
-
   if (error) {
     setState(LoginStateEnum.ErrorSignIn);
   } else {

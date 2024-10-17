@@ -1,5 +1,5 @@
-export interface GroupWrapper {
+export type GroupWrapper = {
   id: number;
-  name: string;
-  description: string | null;
-}
+  group_name: string;
+  group_description: string | null;
+};

@@ -1,8 +1,7 @@
-import { DateTime } from "luxon";
+import { useDataCache } from "#nuxt-multi-cache/composables";
 import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
-import { Database, Tables } from "~/types/supabase";
 import { EventWrapper } from "~/types/event";
-import { mediaWrapperFromDatabaseMediaRow } from "~/server/utils/conversions";
+import { useEventInfoCacheKey } from "~/composable/event";
 
 export default defineEventHandler(async (event): Promise<EventWrapper> => {
   const idParam = getRouterParam(event, "id");
@@ -15,6 +14,19 @@ export default defineEventHandler(async (event): Promise<EventWrapper> => {
   }
 
   const id = +idParam;
+
+  const cacheKey = useEventInfoCacheKey(id.toString());
+
+  const { value, addToCache } = await useDataCache<EventWrapper>(
+    cacheKey,
+    event,
+  );
+  if (value) {
+    console.log(`cache hit ${cacheKey}`);
+    return value;
+  }
+
+  console.log(`cache miss ${cacheKey}`);
 
   const client = await serverSupabaseClient(event);
 
@@ -37,12 +49,7 @@ export default defineEventHandler(async (event): Promise<EventWrapper> => {
     });
   }
 
-  return {
-    id,
-    title: data.title,
-    description: data.description,
-    start_date: data.start_date,
-    end_date: data.end_date,
-    image: null,
-  };
+  await addToCache(data, [], 3600);
+
+  return data;
 });

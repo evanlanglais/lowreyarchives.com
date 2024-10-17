@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { MediaType, type MediaWrapper } from "~/types/media";
-
-const supabase = useSupabaseClient();
+import { useMediaUrlFetch } from "~/composable/media";
 
 const props = defineProps<{
   media: MediaWrapper;
@@ -20,27 +19,7 @@ const isVideo = computed((): boolean => {
   }
 });
 
-const { data: mediaUrl } = await useAsyncData(
-  `media-${props.media.id}-url`,
-  async () => {
-    switch (props.media.type) {
-      case MediaType.Youtube:
-      case MediaType.Video:
-      case MediaType.Photo:
-        return props.media.url;
-      case MediaType.BucketVideo: {
-        const { data } = await supabase.storage
-          .from("video")
-          .createSignedUrl(props.media.url, 3600);
-
-        return data?.signedUrl;
-      }
-      default:
-        console.error("Unknown media type");
-        break;
-    }
-  },
-);
+const { data: mediaUrl } = await useMediaUrlFetch(props.media);
 </script>
 
 <template>

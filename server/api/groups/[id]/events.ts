@@ -1,11 +1,11 @@
-import { DateTime } from "luxon";
+import { useDataCache } from "#nuxt-multi-cache/composables";
 import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
-import { Database, Tables } from "~/types/supabase";
+import { Tables } from "~/types/supabase";
 import { EventWrapper } from "~/types/event";
-import { mediaWrapperFromDatabaseMediaRow } from "~/server/utils/conversions";
+import { useGroupEventsCacheKey } from "~/composable/group";
 
 export default defineEventHandler(
-  async (event): Promise<Array<Tables<"events">>> => {
+  async (event): Promise<Array<EventWrapper>> => {
     const idParam = getRouterParam(event, "id");
 
     if (!idParam) {
@@ -16,6 +16,19 @@ export default defineEventHandler(
     }
 
     const id = +idParam;
+
+    const cacheKey = useGroupEventsCacheKey(id.toString());
+
+    const { value, addToCache } = await useDataCache<EventWrapper[]>(
+      cacheKey,
+      event,
+    );
+    if (value) {
+      console.log(`cache hit ${cacheKey}`);
+      return value;
+    }
+
+    console.log(`cache miss ${cacheKey}`);
 
     const client = await serverSupabaseClient(event);
 
@@ -31,6 +44,8 @@ export default defineEventHandler(
         statusMessage: `Unable to load group events`,
       });
     }
+
+    await addToCache(data, [], 3600);
 
     return data;
   },

@@ -1,13 +1,17 @@
 <script setup lang="ts">
-const user = useSupabaseUser();
+import type { GroupWrapper } from "~/types/group";
 
-const { data: userGroups, execute } = useFetch(
-  `/api/users/${user.value?.id}/groups`,
-  {
-    key: `user-${user.value ? user.value.id : ""}-groups`,
-    immediate: false,
-    lazy: true,
+const user = useSupabaseUser();
+const userGroups = ref<GroupWrapper[]>();
+
+watch(
+  user,
+  async () => {
+    if (user.value) {
+      userGroups.value = await $fetch(`/api/users/${user.value.id}/groups`);
+    }
   },
+  { immediate: true },
 );
 
 const links = computed(() => {
@@ -77,30 +81,26 @@ const asideLinks = computed(() => {
     ];
   }
 });
-
-onMounted(async () => {
-  if (user.value) {
-    await execute();
-  }
-});
 </script>
 
 <template>
-  <UHeader :links="links">
-    <template #logo>
-      <h2>Lowrey Archives</h2>
-    </template>
+  <ClientOnly>
+    <UHeader :links="links">
+      <template #logo>
+        <h2>Lowrey Archives</h2>
+      </template>
 
-    <template #panel>
-      <UAsideLinks :links="asideLinks" />
-    </template>
+      <template #panel>
+        <UAsideLinks :links="asideLinks" />
+      </template>
 
-    <template #right>
-      <UColorModeButton />
+      <template #right>
+        <UColorModeButton />
 
-      <UButton v-if="!!user" to="/logout" label="Logout" color="green" />
-    </template>
-  </UHeader>
+        <UButton v-if="!!user" to="/logout" label="Logout" color="green" />
+      </template>
+    </UHeader>
+  </ClientOnly>
 </template>
 
 <style scoped></style>

@@ -13,20 +13,16 @@ export default defineEventHandler(async (event): Promise<void> => {
   const body = await readBody(event);
 
   const uploadId = body.uploadId;
-  const parts = body.parts;
   const key = body.key;
 
   const params = {
     Bucket: runtimeConfig.minioBucket,
     Key: key,
     UploadId: uploadId,
-    MultipartUpload: {
-      Parts: parts,
-    },
   };
 
   try {
-    await useS3Client().completeMultipartUpload(params);
+    await useS3Client().abortMultipartUpload(params);
   } catch (error) {
     console.error(error);
     throw createError({

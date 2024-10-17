@@ -8,11 +8,15 @@ export default defineNuxtConfig({
     "@nuxt/ui",
     "@nuxtjs/fontaine",
     "@nuxtjs/google-fonts",
+    "nuxt-multi-cache",
   ],
   runtimeConfig: {
     public: {
       baseUrl: "https://lowreyarchives.com",
     },
+    minioKey: "",
+    minioKeySecret: "",
+    minioBucket: "fa-archive",
   },
   supabase: {
     redirectOptions: {
@@ -28,7 +32,7 @@ export default defineNuxtConfig({
       config: {
         // ...
         platform: {
-          apiRuntime: "node:18",
+          apiRuntime: "node:20",
         },
       },
     },
@@ -59,5 +63,19 @@ export default defineNuxtConfig({
   },
   experimental: {
     payloadExtraction: true,
+  },
+  compatibilityDate: "2024-10-15",
+  multiCache: {
+    data: {
+      enabled: true,
+    },
+    // Cache Management API.
+    api: {
+      enabled: true,
+
+      // Use a different prefix for the API endpoints.
+      prefix: "/api/nuxt-multi-cache",
+    },
+    debug: true,
   },
 });

@@ -1,5 +1,7 @@
+import { useDataCache } from "#nuxt-multi-cache/composables";
 import { serverSupabaseClient } from "#supabase/server";
 import { GroupWrapper } from "~/types/group";
+import { useGroupInfoCacheKey } from "~/composable/group";
 
 export default defineEventHandler(async (event): Promise<GroupWrapper> => {
   const idParam = getRouterParam(event, "id");
@@ -12,6 +14,19 @@ export default defineEventHandler(async (event): Promise<GroupWrapper> => {
   }
 
   const id = +idParam;
+
+  const cacheKey = useGroupInfoCacheKey(id.toString());
+
+  const { value, addToCache } = await useDataCache<GroupWrapper>(
+    cacheKey,
+    event,
+  );
+  if (value) {
+    console.log(`cache hit ${cacheKey}`);
+    return value;
+  }
+
+  console.log(`cache miss ${cacheKey}`);
 
   const client = await serverSupabaseClient(event);
 
@@ -32,9 +47,7 @@ export default defineEventHandler(async (event): Promise<GroupWrapper> => {
     });
   }
 
-  return {
-    id,
-    name: data.group_name,
-    description: data.group_description,
-  };
+  await addToCache(data, [], 3600);
+
+  return data;
 });

@@ -2,26 +2,25 @@
 import { DateTime } from "luxon";
 import { MediaType, type MediaWrapper } from "~/types/media";
 import MediaViewer from "~/components/MediaViewer.vue";
+import { useFlattenParam } from "~/composable/utils";
+import { useEventDateString } from "~/composable/event";
 const route = useRoute();
-const groupId = route.params.groupId;
-const eventId = route.params.eventId;
+const groupId = useFlattenParam(route.params.groupId);
+const eventId = useFlattenParam(route.params.eventId);
 
-const { data: groupInfo } = await useFetch(`/api/groups/${groupId}`, {
-  key: `group-${groupId}-info`,
-});
-const { data: eventInfo } = await useFetch(`/api/events/${eventId}`, {
-  key: `event-${eventId}-info`,
-});
-const { data: eventMedia, pending: mediaPending } = await useFetch(
-  `/api/events/${eventId}/media`,
-  {
-    key: `event-${eventId}-media`,
-    lazy: true,
-    server: false,
-  },
-);
+const isMediaUploaderOpen = ref(false);
 
-const links = [
+const [
+  { data: groupInfo },
+  { data: eventInfo },
+  { data: eventMedia, status: eventMediaStatus },
+] = await Promise.all([
+  useFetch(`/api/groups/${groupId}`),
+  useFetch(`/api/events/${eventId}`),
+  useFetch(`/api/events/${eventId}/media`, { lazy: true, server: false }),
+]);
+
+const links = computed(() => [
   {
     label: "Home",
     icon: "i-heroicons-home",
@@ -33,7 +32,7 @@ const links = [
     to: "/archive",
   },
   {
-    label: `${groupInfo.value ? groupInfo.value.name : "Loading..."}`,
+    label: `${groupInfo.value ? groupInfo.value.group_name : "Loading..."}`,
     icon: "i-heroicons-user-group",
     to: `/groups/${groupId}`,
   },
@@ -42,21 +41,14 @@ const links = [
     icon: "i-heroicons-calendar",
     to: `/groups/${groupId}/events/${eventId}`,
   },
-];
+]);
 
 const headline = computed(() => {
   if (!eventInfo.value) {
     return "";
   }
 
-  const startDate = DateTime.fromISO(eventInfo.value.start_date);
-  const endDate = DateTime.fromISO(eventInfo.value.end_date);
-
-  if (startDate.equals(endDate)) {
-    return startDate.toLocaleString(DateTime.DATE_MED);
-  }
-
-  return `${startDate.toLocaleString(DateTime.DATE_MED)} - ${endDate.toLocaleString(DateTime.DATE_MED)}`;
+  return useEventDateString(eventInfo.value);
 });
 
 const videos = computed((): Array<MediaWrapper> => {
@@ -91,9 +83,20 @@ const photos = computed((): Array<MediaWrapper> => {
           !!eventInfo && !!eventInfo.description ? eventInfo.description : ''
         "
         :headline="headline"
+        :links="[
+          {
+            label: 'Upload Media',
+            click: () => (isMediaUploaderOpen = true),
+            icon: 'i-heroicons-arrow-up-tray',
+          },
+        ]"
       />
       <UPageBody>
-        <div v-if="!mediaPending">
+        <ClientOnly>
+          <UProgress
+            v-if="eventMediaStatus == 'pending'"
+            animation="carousel"
+          />
           <div v-if="videos.length > 0">
             <UDivider size="md" class="mb-4">Videos</UDivider>
             <UPageGrid>
@@ -116,10 +119,12 @@ const photos = computed((): Array<MediaWrapper> => {
               </MediaViewer>
             </UPageGrid>
           </div>
-        </div>
-        <UProgress v-else animation="carousel"></UProgress>
+        </ClientOnly>
       </UPageBody>
     </UPage>
+    <UModal v-model="isMediaUploaderOpen">
+      <MediaUploader />
+    </UModal>
   </UContainer>
 </template>
 

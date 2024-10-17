@@ -1,44 +1,122 @@
 <template>
   <UContainer>
-    <h2>I am the uploader page</h2>
-    <!--    <LoginCard>-->
-    <!--      <div>-->
-    <!--        <div v-if="complete">Upload complete 👍</div>-->
-    <!--        <FormKit type="form" submit-label="Begin upload" @submit="uploadVideo">-->
-    <!--          <FormKit-->
-    <!--            type="file"-->
-    <!--            label="Videos"-->
-    <!--            accept=".mp4, .mkv, .webm, .mov, .avi, .flv, .wmv, .m4v, .3gp, .ogv, .mpeg, .mpg"-->
-    <!--            name="videos"-->
-    <!--            multiple="true"-->
-    <!--            help="Select all videos you wish to upload"-->
-    <!--            validation="required"-->
-    <!--          />-->
-    <!--          <div v-if="uploading">Progress: {{ progress }}/100</div>-->
-    <!--        </FormKit>-->
-    <!--      </div>-->
-    <!--    </LoginCard>-->
+    <UPage>
+      <UPageHeader headline="Uploader" title="Upload Media" description="" />
+      <UPageBody>
+        <UCard v-if="!uploading">
+          <template #header>
+            <h3>Upload things here</h3>
+          </template>
+
+          <UForm
+            :state="state"
+            class="space-y-4"
+            @submit="onSubmit"
+            @error="onError"
+          >
+            <UInput
+              type="file"
+              size="lg"
+              icon="i-heroicons-folder"
+              multiple
+              accept="video/*"
+              required
+              @change="
+                (e: FileList) => {
+                  state.videos = e;
+                }
+              "
+            />
+
+            <UButton type="submit"> Upload </UButton>
+          </UForm>
+        </UCard>
+        <div v-if="uploading">
+          <UCard v-for="[key, value] of videoUploadStateMap" :key="key">
+            <template #header>
+              <h3>{{ key }}</h3>
+            </template>
+
+            <div v-if="value.state == VIDEO_UPLOAD_STATE.INITIAL">
+              <p>Initializing Upload</p>
+            </div>
+
+            <div v-if="value.state == VIDEO_UPLOAD_STATE.FAILED">
+              <span class="accent-red-600">{{ value.errorText }}</span>
+            </div>
+
+            <div v-if="value.state == VIDEO_UPLOAD_STATE.UPLOADING">
+              <UProgress :value="value.progress"></UProgress>
+            </div>
+            <div v-if="value.state == VIDEO_UPLOAD_STATE.COMPLETED">
+              <span class="accent-red-600">Upload Completed</span>
+            </div>
+          </UCard>
+        </div>
+      </UPageBody>
+    </UPage>
   </UContainer>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: "default" });
-const file = ref<File | null>(null);
-const complete = ref<Boolean>(false);
-const uploading = ref<Boolean>(false);
-const progress = ref<Number>(0);
+import type { FormError, FormErrorEvent, FormSubmitEvent } from "#ui/types";
+const state = reactive({
+  videos: undefined as FileList | undefined,
+});
 
-const uploadVideo = async (data: { videos: Array<{ file: File }> }) => {
-  const fileIndex = 0;
+enum VIDEO_UPLOAD_STATE {
+  INITIAL,
+  UPLOADING,
+  FAILED,
+  COMPLETED,
+}
+
+const uploading = ref<boolean>(false);
+const videoUploadStateMap = ref<
+  Map<
+    string,
+    { state: VIDEO_UPLOAD_STATE; errorText: string; progress: number }
+  >
+>(
+  new Map<
+    string,
+    { state: VIDEO_UPLOAD_STATE; errorText: string; progress: number }
+  >(),
+);
+
+function onError(event: FormErrorEvent) {
+  const element = document.getElementById(event.errors[0].id);
+  element?.focus();
+  element?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+async function onSubmit(event: FormSubmitEvent<any>) {
   uploading.value = true;
+  const promises = [];
+  if (state.videos === undefined) return;
+  for (let i = 0; i < state.videos.length; i++) {
+    promises.push(uploadVideo(state.videos[i]));
+  }
+  await Promise.all(promises);
+  uploading.value = false;
+}
 
-  for (const file of data.videos.map((video) => video.file)) {
-    const chunkSize = 5 * 1024 * 1024; // 5MB
-    const fileType = file.type;
-    const fileName = file.name;
-    const fileSize = file.size;
+async function uploadVideo(file: File) {
+  const chunkSize = 50 * 1024 * 1024; // 50MB
+  const fileType = file.type;
+  const fileName = file.name;
+  const fileSize = file.size;
 
-    const startUploadResponse = await useFetch("/api/start-multipart-upload", {
+  const videoStatus = {
+    state: VIDEO_UPLOAD_STATE.INITIAL,
+    errorText: "",
+    progress: 0,
+  };
+
+  videoUploadStateMap.value?.set(fileName, videoStatus);
+
+  try {
+    const startUploadResponse = await $fetch("/api/start-multipart-upload", {
       method: "post",
       body: {
         fileName,
@@ -46,58 +124,68 @@ const uploadVideo = async (data: { videos: Array<{ file: File }> }) => {
       },
     });
 
-    if (startUploadResponse.error.value || !startUploadResponse.data.value) {
-      console.log(`Failed to initiate upload of file ${fileName}`);
-      continue;
-    }
-
-    const uploadId = startUploadResponse.data.value.uploadId;
-    const key = startUploadResponse.data.value.key;
-
     const chunks = Math.ceil(fileSize / chunkSize);
     const uploadedParts = [];
 
     for (let i = 0; i < chunks; i++) {
       const chunk = file.slice(i * chunkSize, (i + 1) * chunkSize);
-      const response = await useFetch("/api/get-chunk-upload-url", {
-        method: "post",
-        body: {
-          key,
-          fileType,
-          uploadId,
-          partNumber: i + 1,
-        },
-      });
+      try {
+        const response = await $fetch("/api/get-chunk-upload-url", {
+          method: "post",
+          body: {
+            key: startUploadResponse.key,
+            fileType,
+            uploadId: startUploadResponse.uploadId,
+            partNumber: i + 1,
+          },
+        });
 
-      const presignedUrl = response.data.value.presignedUrl;
-      const uploadResponse = await $fetch.raw(presignedUrl, {
-        method: "put",
-        headers: {
-          "Content-Type": fileType,
-        },
-        body: chunk,
-      });
+        const uploadResponse = await $fetch.raw(response.presignedUrl, {
+          method: "put",
+          headers: {
+            "Content-Type": fileType,
+          },
+          body: chunk,
+        });
 
-      uploadedParts.push({
-        ETag: uploadResponse.headers.get("ETag"),
-        PartNumber: i + 1,
-      });
+        uploadedParts.push({
+          ETag: uploadResponse.headers.get("ETag"),
+          PartNumber: i + 1,
+        });
 
-      progress.value =
-        (((i / chunks) * (fileIndex + 1)) / data.videos.length) * 100;
+        videoStatus.progress = (i / chunks) * 100;
+        videoStatus.state = VIDEO_UPLOAD_STATE.UPLOADING;
+        videoUploadStateMap.value.set(fileName, { ...videoStatus });
+      } catch (error) {
+        videoStatus.state = VIDEO_UPLOAD_STATE.FAILED;
+        videoStatus.errorText = "Failed to upload chunk";
+        videoUploadStateMap.value.set(fileName, { ...videoStatus });
+        break;
+      }
     }
 
-    await useFetch("/api/finish-multipart-upload", {
-      method: "post",
-      body: {
-        key,
-        uploadId,
-        parts: uploadedParts,
-      },
-    });
-  }
+    try {
+      await $fetch("/api/finish-multipart-upload", {
+        method: "post",
+        body: {
+          key: startUploadResponse.key,
+          uploadId: startUploadResponse.uploadId,
+          parts: uploadedParts,
+        },
+      });
 
-  complete.value = true;
-  uploading.value = false;
-};
+      videoStatus.state = VIDEO_UPLOAD_STATE.COMPLETED;
+      videoUploadStateMap.value.set(fileName, { ...videoStatus });
+    } catch (error) {
+      videoStatus.state = VIDEO_UPLOAD_STATE.FAILED;
+      videoStatus.errorText = "Unable to finish upload";
+      videoUploadStateMap.value.set(fileName, { ...videoStatus });
+    }
+  } catch (error) {
+    console.error(error);
+    videoStatus.state = VIDEO_UPLOAD_STATE.FAILED;
+    videoStatus.errorText = "Unable to start upload";
+    videoUploadStateMap.value.set(fileName, { ...videoStatus });
+  }
+}
 </script>

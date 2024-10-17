@@ -9,15 +9,17 @@ watch(
   async () => {
     if (user.value) {
       await client.auth.signOut();
-      return navigateTo("/");
     }
+    return navigateTo("/");
   },
   { immediate: true },
 );
 </script>
 
 <template>
-  <UPage>
-    <UPageHeader title="Logout" description="Logging you out..." />
-  </UPage>
+  <UContainer>
+    <UPage>
+      <UPageHeader title="Logout" description="Logging you out..." />
+    </UPage>
+  </UContainer>
 </template>

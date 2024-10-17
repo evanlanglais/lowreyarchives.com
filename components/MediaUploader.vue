@@ -49,7 +49,7 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
   updateMediaUploadProgress(key, 0);
 
   try {
-    console.log(`${key} starting multipartupload request`)
+    console.log(`${key} starting multipartupload request`);
     const startUploadResponse = await $fetch("/api/start-multipart-upload", {
       method: "post",
       body: {
@@ -57,7 +57,7 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
         fileType,
       },
     });
-    console.log(`${key} got mjultipartuploadrequest`)
+    console.log(`${key} got mjultipartuploadrequest`);
 
     uploadKey = startUploadResponse.key;
     uploadId = startUploadResponse.uploadId;
@@ -70,7 +70,9 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
       let successful = false;
       for (let j = 0; j < 5; j++) {
         try {
-          console.log(`${key} starting to get chunk ${i} of ${chunks} upload url`);
+          console.log(
+            `${key} starting to get chunk ${i} of ${chunks} upload url`,
+          );
           const response = await $fetch("/api/get-chunk-upload-url", {
             method: "post",
             body: {
@@ -81,14 +83,14 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
             },
           });
 
-          console.log(`${key} starting put to received chunk ${i} with url ${response.presignedUrl}`);
+          console.log(`${key} starting put to received chunk ${i}`);
           const uploadResponse = await $fetch.raw(response.presignedUrl, {
             method: "put",
             headers: {
               "Content-Type": fileType,
             },
             body: chunk,
-            timeout: 60 * 1000,
+            timeout: 2 * 60 * 1000,
           });
           console.log(`${key} finished putting chunk for ${i}`);
 
@@ -101,7 +103,7 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
           successful = true;
           break;
         } catch (error) {
-          console.log(`Chunk ${i} failed on attempt ${j}`);
+          console.log(`${key} Chunk ${i} failed on attempt ${j}`);
         }
       }
 
@@ -119,7 +121,7 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
         parts: uploadedParts,
       },
     });
-    console.log(`${key} finished`)
+    console.log(`${key} finished`);
 
     completeMediaUpload(key);
     return true;
@@ -160,9 +162,9 @@ function addMediaToUploadQueue(key: string, media: File) {
   mediaUploadStateMap.value?.set(key, new MediaUploadState(media));
 }
 
-function pendMediaUpload(key: string){
+function pendMediaUpload(key: string) {
   const mediaUploadState: MediaUploadState | undefined =
-      mediaUploadStateMap.value.get(key);
+    mediaUploadStateMap.value.get(key);
   if (mediaUploadState === undefined) {
     throw createError("what");
   }
@@ -213,7 +215,7 @@ function openFilePicker() {
 async function startBulkUpload() {
   uploaderState.value = UPLOADER_STATE.UPLOADING;
 
-  mediaUploadStateMap.value.forEach((_,key) => pendMediaUpload(key));
+  mediaUploadStateMap.value.forEach((_, key) => pendMediaUpload(key));
 
   const results = await runWithConcurrencyLimit<boolean>(
     Array.from(mediaUploadStateMap.value).map(

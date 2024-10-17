@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type {GroupWrapper} from "~/types/group";
+import type { GroupWrapper } from "~/types/group";
 
 const user = useSupabaseUser();
 const userGroups = ref<GroupWrapper[]>();

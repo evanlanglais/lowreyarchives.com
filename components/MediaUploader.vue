@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { generateGUID } from "~/composable/utils";
+import { generateGUID, runWithConcurrencyLimit } from "~/composable/utils";
 
 enum UPLOADER_STATE {
   INITIAL,
@@ -10,6 +10,7 @@ enum UPLOADER_STATE {
 
 enum MEDIA_UPLOAD_STATE {
   INITIAL,
+  PENDING,
   UPLOADING,
   FAILED,
   COMPLETED,
@@ -37,14 +38,18 @@ const mediaUploadStateMap = ref<Map<string, MediaUploadState>>(
 );
 
 async function uploadMedia(key: string, file: File): Promise<boolean> {
-  const chunkSize = 5 * 1024 * 1024; // 5MB
+  const chunkSize = 50 * 1024 * 1024; // 50MB
   const fileType = file.type;
   const fileName = file.name;
   const fileSize = file.size;
 
-  console.log(file);
+  let uploadKey: string | null = null;
+  let uploadId: string | null = null;
+
+  updateMediaUploadProgress(key, 0);
 
   try {
+    console.log(`${key} starting multipartupload request`)
     const startUploadResponse = await $fetch("/api/start-multipart-upload", {
       method: "post",
       body: {
@@ -52,60 +57,84 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
         fileType,
       },
     });
+    console.log(`${key} got mjultipartuploadrequest`)
+
+    uploadKey = startUploadResponse.key;
+    uploadId = startUploadResponse.uploadId;
 
     const chunks = Math.ceil(fileSize / chunkSize);
     const uploadedParts = [];
 
     for (let i = 0; i < chunks; i++) {
       const chunk = file.slice(i * chunkSize, (i + 1) * chunkSize);
-      try {
-        const response = await $fetch("/api/get-chunk-upload-url", {
-          method: "post",
-          body: {
-            key: startUploadResponse.key,
-            fileType,
-            uploadId: startUploadResponse.uploadId,
-            partNumber: i + 1,
-          },
-        });
+      let successful = false;
+      for (let j = 0; j < 5; j++) {
+        try {
+          console.log(`${key} starting to get chunk ${i} of ${chunks} upload url`);
+          const response = await $fetch("/api/get-chunk-upload-url", {
+            method: "post",
+            body: {
+              key: uploadKey,
+              fileType,
+              uploadId,
+              partNumber: i + 1,
+            },
+          });
 
-        const uploadResponse = await $fetch.raw(response.presignedUrl, {
-          method: "put",
-          headers: {
-            "Content-Type": fileType,
-          },
-          body: chunk,
-        });
+          console.log(`${key} starting put to received chunk ${i} with url ${response.presignedUrl}`);
+          const uploadResponse = await $fetch.raw(response.presignedUrl, {
+            method: "put",
+            headers: {
+              "Content-Type": fileType,
+            },
+            body: chunk,
+            timeout: 60 * 1000,
+          });
+          console.log(`${key} finished putting chunk for ${i}`);
 
-        uploadedParts.push({
-          ETag: uploadResponse.headers.get("ETag"),
-          PartNumber: i + 1,
-        });
+          uploadedParts.push({
+            ETag: uploadResponse.headers.get("ETag"),
+            PartNumber: i + 1,
+          });
 
-        updateMediaUploadProgress(key, (i / chunks) * 100);
-      } catch (error) {
-        failMediaUpload(key, "Failed to upload chunk");
-        break;
+          updateMediaUploadProgress(key, (i / chunks) * 100);
+          successful = true;
+          break;
+        } catch (error) {
+          console.log(`Chunk ${i} failed on attempt ${j}`);
+        }
+      }
+
+      if (!successful) {
+        throw createError(`Unable to upload chunk ${i}`);
       }
     }
 
-    try {
-      await $fetch("/api/finish-multipart-upload", {
+    console.log(`${key} finishing`);
+    await $fetch("/api/finish-multipart-upload", {
+      method: "post",
+      body: {
+        key: startUploadResponse.key,
+        uploadId: startUploadResponse.uploadId,
+        parts: uploadedParts,
+      },
+    });
+    console.log(`${key} finished`)
+
+    completeMediaUpload(key);
+    return true;
+  } catch (error) {
+    failMediaUpload(key, "Failed to upload file");
+    console.error(error);
+    if (uploadKey != null && uploadId != null) {
+      await $fetch("/api/abort-multipart-upload", {
         method: "post",
         body: {
-          key: startUploadResponse.key,
-          uploadId: startUploadResponse.uploadId,
-          parts: uploadedParts,
+          key: uploadKey,
+          uploadId,
         },
       });
-
-      completeMediaUpload(key);
-      return true;
-    } catch (error) {
-      failMediaUpload(key, "Failed to finalize upload");
     }
-  } catch (error) {
-    failMediaUpload(key, "Failed to start upload");
   }
 
   return false;
@@ -129,6 +158,17 @@ function removeMediaFromUploadQueue(key: string) {
 
 function addMediaToUploadQueue(key: string, media: File) {
   mediaUploadStateMap.value?.set(key, new MediaUploadState(media));
+}
+
+function pendMediaUpload(key: string){
+  const mediaUploadState: MediaUploadState | undefined =
+      mediaUploadStateMap.value.get(key);
+  if (mediaUploadState === undefined) {
+    throw createError("what");
+  }
+
+  mediaUploadState.state = MEDIA_UPLOAD_STATE.PENDING;
+  mediaUploadStateMap.value.set(key, mediaUploadState);
 }
 
 function updateMediaUploadProgress(key: string, progress: number) {
@@ -172,11 +212,18 @@ function openFilePicker() {
 
 async function startBulkUpload() {
   uploaderState.value = UPLOADER_STATE.UPLOADING;
-  const promises = [];
-  for (const [key, value] of mediaUploadStateMap.value) {
-    promises.push(uploadMedia(key, value.file));
-  }
-  const results = await Promise.all(promises);
+
+  mediaUploadStateMap.value.forEach((_,key) => pendMediaUpload(key));
+
+  const results = await runWithConcurrencyLimit<boolean>(
+    Array.from(mediaUploadStateMap.value).map(
+      ([key, value]) =>
+        () =>
+          uploadMedia(key, value.file),
+    ),
+    2,
+  );
+
   uploaderState.value = results.includes(false)
     ? UPLOADER_STATE.FAILED
     : UPLOADER_STATE.COMPLETED;
@@ -218,6 +265,7 @@ async function startBulkUpload() {
             icon="i-heroicons-x-mark-20-solid"
             @click="removeMediaFromUploadQueue(key)"
           />
+          <p v-if="value.state == MEDIA_UPLOAD_STATE.PENDING">Queued</p>
           <UProgress
             v-if="value.state == MEDIA_UPLOAD_STATE.UPLOADING"
             :value="value.progress"
@@ -227,13 +275,13 @@ async function startBulkUpload() {
             v-if="value.state == MEDIA_UPLOAD_STATE.COMPLETED"
             class="text-green-400"
           >
-            Upload Completed
+            Complete
           </p>
           <p
             v-if="value.state == MEDIA_UPLOAD_STATE.FAILED"
             class="text-red-400"
           >
-            Upload Failed: {{ value.errorText }}
+            Failed: {{ value.errorText }}
           </p>
         </span>
       </div>

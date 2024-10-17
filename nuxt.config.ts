@@ -64,6 +64,7 @@ export default defineNuxtConfig({
   experimental: {
     payloadExtraction: true,
   },
+  compatibilityDate: "2024-10-15",
   multiCache: {
     data: {
       enabled: true,

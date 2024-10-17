@@ -18,3 +18,27 @@ export function generateGUID(): string {
     return v.toString(16);
   });
 }
+
+export async function runWithConcurrencyLimit<T>(
+  tasks: (() => Promise<T>)[],
+  limit: number,
+): Promise<T[]> {
+  const results: Promise<T>[] = [];
+  const executing: Promise<T>[] = [];
+
+  for (const task of tasks) {
+    const promise = task().then((result) => {
+      executing.splice(executing.indexOf(promise), 1);
+      return result;
+    });
+
+    results.push(promise);
+    executing.push(promise);
+
+    if (executing.length >= limit) {
+      await Promise.race(executing);
+    }
+  }
+
+  return Promise.all(results);
+}

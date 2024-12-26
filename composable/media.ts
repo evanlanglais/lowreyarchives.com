@@ -35,6 +35,15 @@ export const useMediaUrlFetch = async (media: MediaWrapper) => {
         mediaUrl = data?.signedUrl;
         break;
       }
+      case MediaType.CloudflareVideo: {
+        try {
+          mediaUrl = await $fetch(`/api/cloudflare-video-url/${media.url}`);
+        } catch (error) {
+          console.error(error);
+        }
+
+        break;
+      }
       default:
         throw createError({
           statusMessage: `Unknown media type ${media.type}`,

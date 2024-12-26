@@ -11,6 +11,7 @@ const isVideo = computed((): boolean => {
     case MediaType.Video:
     case MediaType.Youtube:
     case MediaType.BucketVideo:
+    case MediaType.CloudflareVideo:
       return true;
     case MediaType.Photo:
       return false;

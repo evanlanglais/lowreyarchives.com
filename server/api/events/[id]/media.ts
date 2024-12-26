@@ -46,9 +46,16 @@ export default defineEventHandler(
       });
     }
 
-    const transformedData = data.map((mediaRow) =>
-      mediaWrapperFromDatabaseMediaRow(mediaRow),
-    );
+    const transformedData = data
+      .map((mediaRow) => {
+        try {
+          return mediaWrapperFromDatabaseMediaRow(mediaRow);
+        } catch (error) {
+          console.log(error);
+          return undefined;
+        }
+      })
+      .filter((mediaEntry) => !!mediaEntry);
 
     await addToCache(transformedData, [], 3600);
 

@@ -17,6 +17,9 @@ export default defineNuxtConfig({
     minioKey: "",
     minioKeySecret: "",
     minioBucket: "fa-archive",
+    cloudflareAccount: "",
+    cloudflareKey: "",
+    cloudflareStreamCode: "",
   },
   supabase: {
     redirectOptions: {

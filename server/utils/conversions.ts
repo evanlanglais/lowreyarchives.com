@@ -25,6 +25,8 @@ export function mediaTypeFromDatabaseMediaType(
       return MediaType.Video;
     case "bucket_video":
       return MediaType.BucketVideo;
+    case "cloudflare_video":
+      return MediaType.CloudflareVideo;
     default:
       throw new Error(`Unknown media type "${mediaType}"`);
   }

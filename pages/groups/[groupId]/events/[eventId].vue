@@ -60,7 +60,8 @@ const videos = computed((): Array<MediaWrapper> => {
     (media) =>
       media.type === MediaType.Video ||
       media.type === MediaType.Youtube ||
-      media.type === MediaType.BucketVideo,
+      media.type === MediaType.BucketVideo ||
+      media.type === MediaType.CloudflareVideo,
   );
 });
 

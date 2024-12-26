@@ -11,7 +11,7 @@ watch(
       userGroups.value = await $fetch(`/api/users/${user.value.id}/groups`);
     }
   },
-  { immediate: true },
+  { immediate: false },
 );
 
 const links = computed(() => {

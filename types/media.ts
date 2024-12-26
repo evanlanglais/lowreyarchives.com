@@ -4,6 +4,7 @@ export enum MediaType {
   Youtube,
   Video,
   BucketVideo,
+  CloudflareVideo,
 }
 
 export type MediaWrapper = {

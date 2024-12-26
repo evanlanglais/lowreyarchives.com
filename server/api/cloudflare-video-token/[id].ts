@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    return `https://customer-${runtimeConfig.cloudflareStreamCode}.cloudflarestream.com/${tokenResponse.result.token}/manifest/video.m3u8`;
+    return tokenResponse.result.token; // `https://customer-${runtimeConfig.cloudflareStreamCode}.cloudflarestream.com/${tokenResponse.result.token}/manifest/video.m3u8`;
   } catch (error) {
     console.error(error);
     throw createError({

@@ -25,17 +25,7 @@
                   :key="event.id"
                   :to="`/groups/${group.id}/events/${event.id}`"
                 >
-                  <UPageCard>
-                    <template #title>
-                      <span class="line-clamp-2">{{ event.title }}</span>
-                    </template>
-                    <template #description>
-                      <span class="line-clamp-2">{{ event.description }}</span>
-                      <span class="line-clamp-2">{{
-                        useEventDateString(event)
-                      }}</span>
-                    </template>
-                  </UPageCard>
+                  <EventCard :event="event"></EventCard>
                 </NuxtLink>
               </UPageGrid>
               <span v-else class="line-clamp-2">No Events</span>
@@ -55,23 +45,13 @@
 
 <script setup lang="ts">
 import { DateTime } from "luxon";
-import { useAsyncData } from "#app";
-import type { Tables } from "~/types/supabase";
 import type { GroupWrapper } from "~/types/group";
 import type { EventWrapper } from "~/types/event";
-import { useEventDateString } from "~/composable/event";
-// import { useCurrentUserGroupsFetch } from "~/composable/user";
 
 const user = useSupabaseUser();
 const userGroups = ref<GroupWrapper[]>();
 const groupEvents = ref<Map<number, EventWrapper[]>>();
 const eventLoading = ref(false);
-// const { data: userGroups } = await useFetch(
-//   `/api/users/${user.value?.id}/groups`,
-//   {
-//     watch: [user],
-//   },
-// );
 
 watch(
   user,
@@ -108,34 +88,4 @@ watch(userGroups, async () => {
     eventLoading.value = false;
   }
 });
-
-// const { data: groupEvents, pending: eventLoading } = await useAsyncData(
-//   async () => {
-//     if (!myGroups.value) {
-//       return;
-//     }
-//
-//     const groupedEvents = new Map<number, EventWrapper[]>();
-//
-//     await Promise.all(
-//       myGroups.value.map((group) =>
-//         $fetch(`/api/groups/${group.id}/events`).then((data) => {
-//           data.sort((a, b) =>
-//             DateTime.fromISO(a.start_date) < DateTime.fromISO(b.start_date)
-//               ? -1
-//               : DateTime.fromISO(a.start_date) > DateTime.fromISO(b.start_date)
-//                 ? 1
-//                 : 0,
-//           );
-//           groupedEvents.set(group.id, data);
-//         }),
-//       ),
-//     );
-//
-//     return groupedEvents;
-//   },
-//   {
-//     watch: [myGroups],
-//   },
-// );
 </script>

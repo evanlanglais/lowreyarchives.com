@@ -19,6 +19,7 @@ export default defineEventHandler(
     const id = +idParam;
 
     const cacheKey = useEventMediaCacheKey(id.toString());
+    const cacheLength = 3600;
 
     const { value, addToCache } = await useDataCache<MediaWrapper[]>(
       cacheKey,
@@ -46,18 +47,24 @@ export default defineEventHandler(
       });
     }
 
-    const transformedData = data
-      .map((mediaRow) => {
-        try {
-          return mediaWrapperFromDatabaseMediaRow(mediaRow);
-        } catch (error) {
-          console.log(error);
-          return undefined;
-        }
-      })
-      .filter((mediaEntry) => !!mediaEntry);
+    const transformedData = (
+      await Promise.all(
+        data.map(async (mediaRow): Promise<MediaWrapper | undefined> => {
+          try {
+            return await mediaWrapperFromDatabaseMediaRow(
+              event,
+              cacheLength,
+              mediaRow,
+            );
+          } catch (error) {
+            console.log(error);
+            return undefined;
+          }
+        }),
+      )
+    ).filter((mediaEntry) => !!mediaEntry);
 
-    await addToCache(transformedData, [], 3600);
+    await addToCache(transformedData, [], cacheLength);
 
     return transformedData;
   },

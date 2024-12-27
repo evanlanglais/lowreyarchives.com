@@ -39,19 +39,6 @@ const links = [
     to: `/groups/${groupId}`,
   },
 ];
-
-function getEventDateString(event: EventWrapper): string {
-  const startDate = DateTime.fromISO(event.start_date);
-  const endDate = DateTime.fromISO(event.end_date);
-
-  let returnString = startDate.toLocaleString(DateTime.DATE_MED);
-
-  if (!startDate.equals(endDate)) {
-    returnString += ` - ${endDate.toLocaleString(DateTime.DATE_MED)}`;
-  }
-
-  return returnString;
-}
 </script>
 
 <template>
@@ -78,17 +65,18 @@ function getEventDateString(event: EventWrapper): string {
               :key="event.id"
               :to="`/groups/${groupId}/events/${event.id}`"
             >
-              <UPageCard>
-                <template #title>
-                  <span class="line-clamp-2">{{ event.title }}</span>
-                </template>
-                <template #description>
-                  <span class="line-clamp-2">{{ event.description }}</span>
-                  <span class="line-clamp-2">{{
-                    getEventDateString(event)
-                  }}</span>
-                </template>
-              </UPageCard>
+              <EventCard :event="event"></EventCard>
+              <!--              <UPageCard>-->
+              <!--                <template #title>-->
+              <!--                  <span class="line-clamp-2">{{ event.title }}</span>-->
+              <!--                </template>-->
+              <!--                <template #description>-->
+              <!--                  <span class="line-clamp-2">{{ event.description }}</span>-->
+              <!--                  <span class="line-clamp-2">{{-->
+              <!--                    getEventDateString(event)-->
+              <!--                  }}</span>-->
+              <!--                </template>-->
+              <!--              </UPageCard>-->
             </NuxtLink>
           </UPageGrid>
           <UDivider v-else label="No Events" />

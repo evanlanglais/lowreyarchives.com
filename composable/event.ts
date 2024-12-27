@@ -9,6 +9,10 @@ export const useEventMediaCacheKey = (eventId: string): string => {
   return `event-${eventId}-media`;
 };
 
+export const useEventThumbnailsCacheKey = (eventId: string): string => {
+  return `event-${eventId}-thumbnails`;
+};
+
 export const useEventDateString = (event: EventWrapper): string => {
   const startDate = DateTime.fromISO(event.start_date);
   const endDate = DateTime.fromISO(event.end_date);

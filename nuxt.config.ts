@@ -5,6 +5,7 @@ export default defineNuxtConfig({
   future: {
     compatibilityVersion: 4,
   },
+  ssr: false,
   modules: [
     "@nuxtjs/supabase",
     "@nuxtjs/eslint-module",

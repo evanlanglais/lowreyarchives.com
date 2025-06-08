@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { EventWrapper } from "~/types/event";
-import { useEventDateString } from "~/composable/event";
-import type { MediaWrapper } from "~/types/media";
+import type { EventWrapper } from "#shared/types/event";
+import type { MediaWrapper } from "#shared/types/media";
+import { useEventDateString } from "~/composables/event";
 
 const props = defineProps<{
   event: EventWrapper;

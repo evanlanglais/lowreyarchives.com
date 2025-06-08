@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { DateTime } from "luxon";
-import { useFlattenParam } from "~/composable/utils";
-import type { EventWrapper } from "~/types/event";
+import { useFlattenParam } from "#shared/utils/utils";
+import type { EventWrapper } from "#shared/types/event";
 const route = useRoute();
 const groupId = useFlattenParam(route.params.id);
 

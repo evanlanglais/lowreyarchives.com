@@ -1,6 +1,4 @@
 import { serverSupabaseUser } from "#supabase/server";
-import useS3Client from "~/server/utils/use-s3-client";
-import generateSafeFilename from "~/server/utils/generate-safe-filename";
 const runtimeConfig = useRuntimeConfig();
 
 export default defineEventHandler(

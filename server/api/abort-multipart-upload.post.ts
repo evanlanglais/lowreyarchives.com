@@ -1,5 +1,4 @@
 import { serverSupabaseUser } from "#supabase/server";
-import useS3Client from "~/server/utils/use-s3-client";
 const runtimeConfig = useRuntimeConfig();
 
 export default defineEventHandler(async (event): Promise<void> => {

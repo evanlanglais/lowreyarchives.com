@@ -2,6 +2,10 @@
 import { vite as vidstack } from "vidstack/plugins";
 
 export default defineNuxtConfig({
+  future: {
+    compatibilityVersion: 4,
+  },
+  ssr: false,
   modules: [
     "@nuxtjs/supabase",
     "@nuxtjs/eslint-module",
@@ -26,7 +30,7 @@ export default defineNuxtConfig({
       login: "/login",
       callback: "/confirm",
       exclude: [],
-      cookieRedirect: true,
+      saveRedirectToCookie: true,
     },
   },
   extends: ["@nuxt/ui-pro"],

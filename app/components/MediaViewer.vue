@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MediaType, type MediaWrapper } from "~/types/media";
+import { MediaType, type MediaWrapper } from "#shared/types/media";
 
 const props = defineProps<{
   media: MediaWrapper;

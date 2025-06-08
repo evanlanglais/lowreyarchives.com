@@ -1,7 +1,7 @@
 import { useDataCache } from "#nuxt-multi-cache/composables";
 import { serverSupabaseClient } from "#supabase/server";
-import { GroupWrapper } from "~/types/group";
-import { useGroupInfoCacheKey } from "~/composable/group";
+import { GroupWrapper } from "#shared/types/group";
+import { useGroupInfoCacheKey } from "#shared/utils/cacheKeys";
 
 export default defineEventHandler(async (event): Promise<GroupWrapper> => {
   const idParam = getRouterParam(event, "id");

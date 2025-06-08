@@ -2030,7 +2030,7 @@
     google-fonts-helper "^3.5.0"
     pathe "^1.1.2"
 
-"@nuxtjs/supabase@^1.2.2":
+"@nuxtjs/supabase@^1.5.1":
   version "1.5.1"
   resolved "https://registry.yarnpkg.com/@nuxtjs/supabase/-/supabase-1.5.1.tgz#a618525d3610b2bb0478852fed01ff017451a696"
   integrity sha512-02lgmcHfFxgf/zp+fHaHZYz10WitbltuFq2CFvuxNrk+N/suMpM4lezOYbKPB0LKhYqRuFHlk3AjEd5KKje5cA==

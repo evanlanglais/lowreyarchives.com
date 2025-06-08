@@ -1,7 +1,6 @@
 import { UploadPartCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { serverSupabaseUser } from "#supabase/server";
-import useS3Client from "~/server/utils/use-s3-client";
 const runtimeConfig = useRuntimeConfig();
 
 export default defineEventHandler(

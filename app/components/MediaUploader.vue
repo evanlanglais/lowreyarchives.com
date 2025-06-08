@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { generateGUID, runWithConcurrencyLimit } from "~/composable/utils";
+import { generateGUID, runWithConcurrencyLimit } from "#shared/utils/utils";
 
 enum UPLOADER_STATE {
   INITIAL,

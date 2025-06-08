@@ -18,7 +18,7 @@
     "@nuxt/devtools": "^1.6.0",
     "@nuxtjs/eslint-config-typescript": "^12.1.0",
     "@nuxtjs/eslint-module": "^4.1.0",
-    "@nuxtjs/supabase": "^1.2.2",
+    "@nuxtjs/supabase": "^1.5.1",
     "@types/luxon": "^3.4.2",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",

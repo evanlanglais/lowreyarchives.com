@@ -1,17 +1,5 @@
 import { DateTime } from "luxon";
-import type { EventWrapper } from "~/types/event";
-
-export const useEventInfoCacheKey = (eventId: string): string => {
-  return `event-${eventId}-info`;
-};
-
-export const useEventMediaCacheKey = (eventId: string): string => {
-  return `event-${eventId}-media`;
-};
-
-export const useEventThumbnailsCacheKey = (eventId: string): string => {
-  return `event-${eventId}-thumbnails`;
-};
+import type { EventWrapper } from "#shared/types/event";
 
 export const useEventDateString = (event: EventWrapper): string => {
   const startDate = DateTime.fromISO(event.start_date);

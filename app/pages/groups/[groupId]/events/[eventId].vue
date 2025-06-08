@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { DateTime } from "luxon";
-import { MediaType, type MediaWrapper } from "~/types/media";
+import { MediaType, type MediaWrapper } from "#shared/types/media";
 import MediaViewer from "~/components/MediaViewer.vue";
-import { useFlattenParam } from "~/composable/utils";
-import { useEventDateString } from "~/composable/event";
+import { useFlattenParam } from "#shared/utils/utils";
 const route = useRoute();
 const groupId = useFlattenParam(route.params.groupId);
 const eventId = useFlattenParam(route.params.eventId);

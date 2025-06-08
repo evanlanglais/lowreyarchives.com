@@ -1,9 +1,8 @@
 import { useDataCache } from "#nuxt-multi-cache/composables";
 import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
-import { Database, Tables } from "~/types/supabase";
-import { mediaWrapperFromDatabaseMediaRow } from "~/server/utils/conversions";
-import { MediaWrapper } from "~/types/media";
-import { useEventMediaCacheKey } from "~/composable/event";
+import { Database, Tables } from "#shared/types/supabase";
+import { MediaWrapper } from "#shared/types/media";
+import { useEventMediaCacheKey } from "#shared/utils/cacheKeys";
 
 export default defineEventHandler(
   async (event): Promise<Array<MediaWrapper>> => {

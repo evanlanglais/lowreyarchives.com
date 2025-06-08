@@ -1,6 +1,6 @@
 import { H3Event } from "h3";
-import { Database, Tables } from "~/types/supabase";
-import { MediaType, MediaWrapper } from "~/types/media";
+import { Database, Tables } from "#shared/types/supabase";
+import { MediaType, MediaWrapper } from "#shared/types/media";
 import { serverSupabaseClient } from "#supabase/server";
 
 export async function mediaWrapperFromDatabaseMediaRow(

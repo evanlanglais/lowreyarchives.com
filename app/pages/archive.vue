@@ -45,8 +45,8 @@
 
 <script setup lang="ts">
 import { DateTime } from "luxon";
-import type { GroupWrapper } from "~/types/group";
-import type { EventWrapper } from "~/types/event";
+import type { GroupWrapper } from "#shared/types/group";
+import type { EventWrapper } from "#shared/types/event";
 
 const user = useSupabaseUser();
 const userGroups = ref<GroupWrapper[]>();

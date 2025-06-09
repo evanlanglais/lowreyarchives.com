@@ -52,12 +52,14 @@ const user = useSupabaseUser();
 const userGroups = ref<GroupWrapper[]>();
 const groupEvents = ref<Map<number, EventWrapper[]>>();
 const eventLoading = ref(false);
+const userStore = useUserStore();
+const groupStore = useGroupStore();
 
 watch(
   user,
   async () => {
     if (user.value) {
-      userGroups.value = await $fetch(`/api/users/${user.value.id}/groups`);
+      userGroups.value = await userStore.getUserGroups(user.value.id); // await $fetch(`/api/users/${user.value.id}/groups`);
     }
   },
   { immediate: true },
@@ -71,7 +73,7 @@ watch(userGroups, async () => {
     await Promise.all(
       userGroups.value.map(
         async (group) =>
-          await $fetch(`/api/groups/${group.id}/events`).then((data) => {
+          await groupStore.getGroupEvents(group.id).then((data) => {
             data.sort((a, b) =>
               DateTime.fromISO(a.start_date) < DateTime.fromISO(b.start_date)
                 ? -1

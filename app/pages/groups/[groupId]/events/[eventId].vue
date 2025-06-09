@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { DateTime } from "luxon";
 import { MediaType, type MediaWrapper } from "#shared/types/media";
+import { useGroupStore } from "~/stores/group";
+import { useEventStore } from "~/stores/event";
 import MediaViewer from "~/components/MediaViewer.vue";
 import { useFlattenParam } from "#shared/utils/utils";
 const route = useRoute();
@@ -8,16 +10,27 @@ const groupId = useFlattenParam(route.params.groupId);
 const eventId = useFlattenParam(route.params.eventId);
 
 const isMediaUploaderOpen = ref(false);
+const loading = ref(true);
+const groupInfo = ref(null);
+const eventInfo = ref(null);
+const eventMedia = ref(null);
 
-const [
-  { data: groupInfo },
-  { data: eventInfo },
-  { data: eventMedia, status: eventMediaStatus },
-] = await Promise.all([
-  useFetch(`/api/groups/${groupId}`),
-  useFetch(`/api/events/${eventId}`),
-  useFetch(`/api/events/${eventId}/media`, { lazy: true, server: false }),
-]);
+const groupStore = useGroupStore();
+const eventStore = useEventStore();
+
+onMounted(async () => {
+  loading.value = true;
+  const [groupValue, eventValue, eventMediaValue] = await Promise.all([
+    groupStore.getGroup(groupId),
+    eventStore.getEvent(eventId),
+    eventStore.getEventMedia(eventId),
+  ]);
+
+  groupInfo.value = groupValue;
+  eventInfo.value = eventValue;
+  eventMedia.value = eventMediaValue;
+  loading.value = false;
+});
 
 const links = computed(() => [
   {
@@ -93,10 +106,10 @@ const photos = computed((): Array<MediaWrapper> => {
       />
       <UPageBody>
         <ClientOnly>
-          <UProgress
-            v-if="eventMediaStatus == 'pending'"
-            animation="carousel"
-          />
+          <!--          <UProgress-->
+          <!--            v-if="eventMediaStatus == 'pending'"-->
+          <!--            animation="carousel"-->
+          <!--          />-->
           <div v-if="videos.length > 0">
             <UDivider size="md" class="mb-4">Videos</UDivider>
             <UPageGrid>

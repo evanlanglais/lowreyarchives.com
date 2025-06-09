@@ -13,6 +13,7 @@ export default defineNuxtConfig({
     "@nuxtjs/fontaine",
     "@nuxtjs/google-fonts",
     "nuxt-multi-cache",
+    "@pinia/nuxt",
   ],
   runtimeConfig: {
     public: {

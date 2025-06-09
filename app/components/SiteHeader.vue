@@ -1,18 +1,20 @@
 <script setup lang="ts">
 import type { GroupWrapper } from "#shared/types/group";
+import { useUserStore } from "~/stores/user";
 
 const user = useSupabaseUser();
-const userGroups = ref<GroupWrapper[]>();
+// const userGroups = ref<GroupWrapper[]>();
+// const userStore = useUserStore();
 
-watch(
-  user,
-  async () => {
-    if (user.value) {
-      userGroups.value = await $fetch(`/api/users/${user.value.id}/groups`);
-    }
-  },
-  { immediate: false },
-);
+// watch(
+//   user,
+//   async () => {
+//     if (user.value) {
+//       userGroups.value = await userStore.getUserGroups(user.value.id);
+//     }
+//   },
+//   { immediate: false },
+// );
 
 const links = computed(() => {
   if (user.value) {
@@ -26,15 +28,15 @@ const links = computed(() => {
         label: "Archive",
         icon: "i-heroicons-archive-box",
         to: "/archive",
-        children: userGroups.value
-          ? userGroups.value.map((item) => {
-              return {
-                label: item.group_name,
-                icon: "i-heroicons-user-group",
-                to: `/groups/${item.id}`,
-              };
-            })
-          : [],
+        // children: userGroups.value
+        //   ? userGroups.value.map((item) => {
+        //       return {
+        //         label: item.group_name,
+        //         icon: "i-heroicons-user-group",
+        //         to: `/groups/${item.id}`,
+        //       };
+        //     })
+        //   : [],
       },
     ];
   } else {
@@ -61,15 +63,15 @@ const asideLinks = computed(() => {
         icon: "i-heroicons-archive-box",
         to: "/archive",
       },
-      ...(userGroups.value
-        ? userGroups.value.map((item) => {
-            return {
-              label: item.group_name,
-              icon: "i-heroicons-user-group",
-              to: `/groups/${item.id}`,
-            };
-          })
-        : []),
+      // ...(userGroups.value
+      //   ? userGroups.value.map((item) => {
+      //       return {
+      //         label: item.group_name,
+      //         icon: "i-heroicons-user-group",
+      //         to: `/groups/${item.id}`,
+      //       };
+      //     })
+      //   : []),
     ];
   } else {
     return [

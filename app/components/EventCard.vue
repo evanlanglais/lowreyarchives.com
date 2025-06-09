@@ -2,14 +2,21 @@
 import type { EventWrapper } from "#shared/types/event";
 import type { MediaWrapper } from "#shared/types/media";
 import { useEventDateString } from "~/composables/event";
+import { useEventStore } from "~/stores/event";
 
 const props = defineProps<{
   event: EventWrapper;
 }>();
 
+const loading = ref(true);
+const eventStore = useEventStore();
+const eventMedia = ref(null);
+
 const carouselRef = ref();
 
-onMounted(() => {
+onMounted(async () => {
+  loading.value = true;
+
   setInterval(() => {
     if (!carouselRef.value) return;
 
@@ -19,18 +26,18 @@ onMounted(() => {
 
     carouselRef.value.next();
   }, 5000);
+
+  eventMedia.value = await eventStore.getEventMedia(props.event.id);
+  loading.value = false;
 });
 
-const eventMedia = await useFetch(`/api/events/${props.event.id}/media`, {
-  lazy: true,
-  server: false,
-});
+// const eventMedia = await eventStore.getEventMedia(props.event.id);
 const eventThumbnails = computed((): Array<string> => {
-  if (!eventMedia.data.value) {
+  if (!eventMedia.value) {
     return [];
   }
 
-  return eventMedia.data.value
+  return eventMedia.value
     .map((media: MediaWrapper) => media.image)
     .filter((image) => image != null);
 });
@@ -45,7 +52,9 @@ const eventThumbnails = computed((): Array<string> => {
     }"
   >
     <template #header>
+      <USkeleton v-if="loading" class="w-full" />
       <UCarousel
+        v-else
         ref="carouselRef"
         v-slot="{ item }"
         :items="eventThumbnails"

@@ -48,6 +48,7 @@ export default defineNuxtConfig({
       },
     },
   },
+  css: ['~/assets/css/main.css'],
   ui: {
     icons: ["ph", "simple-icons"],
   },

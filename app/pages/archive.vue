@@ -23,7 +23,7 @@
                 <NuxtLink
                   v-for="event in groupEvents.get(group.id)"
                   :key="event.id"
-                  :to="`/groups/${group.id}/events/${event.id}`"
+                  :to="`/events/${event.id}`"
                 >
                   <EventCard :event="event"></EventCard>
                 </NuxtLink>

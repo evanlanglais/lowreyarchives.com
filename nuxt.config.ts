@@ -14,6 +14,7 @@ export default defineNuxtConfig({
     "@nuxtjs/google-fonts",
     "nuxt-multi-cache",
     "@pinia/nuxt",
+    "@nuxt/image",
   ],
   runtimeConfig: {
     public: {

@@ -3,7 +3,7 @@ import { DateTime } from "luxon";
 import { MediaType, type MediaWrapper } from "#shared/types/media";
 import { useGroupStore } from "~/stores/group";
 import { useEventStore } from "~/stores/event";
-import MediaViewer from "~/components/MediaViewer.vue";
+import MediaTheater from "~/components/MediaTheater.vue";
 import { useFlattenParam } from "#shared/utils/utils";
 const route = useRoute();
 const groupId = useFlattenParam(route.params.groupId);
@@ -113,23 +113,23 @@ const photos = computed((): Array<MediaWrapper> => {
           <div v-if="videos.length > 0">
             <UDivider size="md" class="mb-4">Videos</UDivider>
             <UPageGrid>
-              <MediaViewer
+              <MediaTheater
                 v-for="video in videos"
                 :key="video.id"
                 :media="video"
               >
-              </MediaViewer>
+              </MediaTheater>
             </UPageGrid>
           </div>
           <div v-if="photos.length > 0" class="mb-4">
             <UDivider size="md">Photos</UDivider>
             <UPageGrid>
-              <MediaViewer
+              <MediaTheater
                 v-for="photo in photos"
                 :key="photo.id"
                 :media="photo"
               >
-              </MediaViewer>
+              </MediaTheater>
             </UPageGrid>
           </div>
         </ClientOnly>

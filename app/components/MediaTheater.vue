@@ -1,0 +1,70 @@
+<script setup lang="ts">
+import { computed, defineEmits, defineProps } from "vue";
+import { MediaType, type MediaWrapper } from "#shared/types/media";
+
+const props = defineProps<{
+  media: MediaWrapper | null;
+  isFirst?: boolean;
+  isLast?: boolean;
+}>();
+
+const emit = defineEmits<{
+  (e: "previous"): void;
+  (e: "next"): void;
+}>();
+
+const isVideo = computed((): boolean => {
+  switch (props.media.type) {
+    case MediaType.Video:
+    case MediaType.Youtube:
+    case MediaType.BucketVideo:
+    case MediaType.CloudflareVideo:
+      return true;
+    case MediaType.Photo:
+      return false;
+    default:
+      return false;
+  }
+});
+
+const isFirst = computed(() => props.isFirst ?? false);
+const isLast = computed(() => props.isLast ?? false);
+</script>
+
+<template>
+  <div class="relative h-full bg-black flex items-center justify-center">
+    <template v-if="media">
+      <ModernPlayer
+        v-if="isVideo"
+        :src="media.url"
+        class="max-h-full max-w-full"
+      />
+      <img
+        v-else
+        :src="media.url"
+        class="max-h-full max-w-full"
+        alt="media.title"
+      />
+      <!-- Navigation Buttons -->
+      <UButton
+        v-if="!isFirst"
+        icon="i-heroicons-chevron-left"
+        variant="ghost"
+        size="lg"
+        class="absolute left-4 rounded-full z-50"
+        @click="$emit('previous')"
+      />
+      <UButton
+        v-if="!isLast"
+        icon="i-heroicons-chevron-right"
+        variant="ghost"
+        size="lg"
+        class="absolute right-4 rounded-full z-50"
+        @click="$emit('next')"
+      />
+    </template>
+    <div v-else class="text-white">No media selected</div>
+  </div>
+</template>
+
+<style scoped></style>

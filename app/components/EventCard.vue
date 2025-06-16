@@ -61,7 +61,7 @@ const eventThumbnails = computed((): Array<string> => {
         class="rounded-lg overflow-hidden"
         :ui="{ item: 'basis-full' }"
       >
-        <img :src="item" class="w-full" draggable="false" />
+        <NuxtImg :src="item" class="w-full" draggable="false" placeholder />
       </UCarousel>
     </template>
 

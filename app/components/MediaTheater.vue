@@ -8,12 +8,13 @@ const props = defineProps<{
   isLast?: boolean;
 }>();
 
-const emit = defineEmits<{
-  (e: "previous"): void;
-  (e: "next"): void;
-}>();
+const emit = defineEmits(['previous', 'next']);
 
 const isVideo = computed((): boolean => {
+  if (!props.media){
+    return false;
+  }
+
   switch (props.media.type) {
     case MediaType.Video:
     case MediaType.Youtube:
@@ -32,7 +33,7 @@ const isLast = computed(() => props.isLast ?? false);
 </script>
 
 <template>
-  <div class="relative h-full bg-black flex items-center justify-center">
+  <div class="relative h-full flex items-center justify-center">
     <template v-if="media">
       <ModernPlayer
         v-if="isVideo"
@@ -44,7 +45,7 @@ const isLast = computed(() => props.isLast ?? false);
         :src="media.url"
         class="max-h-full max-w-full"
         alt="media.title"
-      />
+      >
       <!-- Navigation Buttons -->
       <UButton
         v-if="!isFirst"
@@ -63,7 +64,11 @@ const isLast = computed(() => props.isLast ?? false);
         @click="$emit('next')"
       />
     </template>
-    <div v-else class="text-white">No media selected</div>
+    <UPageCTA
+        v-else
+        title="No Media Selected"
+        description="Select media below to view on the big screen!"
+    />
   </div>
 </template>
 

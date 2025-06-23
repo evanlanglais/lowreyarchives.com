@@ -1,7 +1,6 @@
 import { S3 } from "@aws-sdk/client-s3";
 const runtimeConfig = useRuntimeConfig();
 
-// @ts-ignore
 const s3Client = new S3({
   forcePathStyle: true, // Configures to use subdomain/virtual calling format.
   endpoint: "http://minio.lowreyarchives.com:9000",

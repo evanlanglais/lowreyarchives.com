@@ -8,5 +8,5 @@ export const useUserStore = defineApiStore(
       fetcher: (userId: string) => $fetch(`/api/users/${userId}/groups`),
     },
   },
-  { ttlMs: 5 * 60 * 1000, debounceMs: 250 },
+  { ttlMs: 5 * 60 * 1000 },
 );

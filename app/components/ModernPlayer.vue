@@ -25,8 +25,8 @@ onBeforeUnmount(() => {
 
 <template>
   <media-player ref="player" :src="src">
-    <media-provider></media-provider>
-    <media-video-layout></media-video-layout>
+    <media-provider/>
+    <media-video-layout/>
   </media-player>
 </template>
 

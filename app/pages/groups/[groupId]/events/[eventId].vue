@@ -117,8 +117,7 @@ const photos = computed((): Array<MediaWrapper> => {
                 v-for="video in videos"
                 :key="video.id"
                 :media="video"
-              >
-              </MediaTheater>
+              />
             </UPageGrid>
           </div>
           <div v-if="photos.length > 0" class="mb-4">
@@ -128,8 +127,7 @@ const photos = computed((): Array<MediaWrapper> => {
                 v-for="photo in photos"
                 :key="photo.id"
                 :media="photo"
-              >
-              </MediaTheater>
+              />
             </UPageGrid>
           </div>
         </ClientOnly>

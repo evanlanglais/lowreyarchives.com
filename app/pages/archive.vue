@@ -7,9 +7,8 @@
         description="Sift through all the different uploads from within your family groups"
       />
       <UPageBody>
-        <ClientOnly>
           <div v-for="group in userGroups" :key="group.id">
-            <UDivider size="md" :label="group.group_name" class="mb-2" />
+            <USeparator size="md" :label="group.group_name" class="mb-2" />
             <UProgress v-if="eventLoading" animation="carousel" />
             <div v-else>
               <UPageGrid
@@ -25,7 +24,7 @@
                   :key="event.id"
                   :to="`/events/${event.id}`"
                 >
-                  <EventCard :event="event"></EventCard>
+                  <EventCard :event="event"/>
                 </NuxtLink>
               </UPageGrid>
               <span v-else class="line-clamp-2">No Events</span>
@@ -37,7 +36,6 @@
               <span class="line-clamp-2">You don't belong to any groups!</span>
             </template>
           </UPageCard>
-        </ClientOnly>
       </UPageBody>
     </UPage>
   </UContainer>

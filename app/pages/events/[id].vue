@@ -19,7 +19,7 @@
       <!--    />-->
       <UPageBody>
         <!-- MediaTheater pinned at top -->
-        <div class="flex-shrink-0" :style="`height: ${theaterHeight}%`">
+        <div class="shrink-0" :style="`height: ${theaterHeight}%`">
           <MediaTheater
             :media="currentMedia"
             :is-first="isFirst"

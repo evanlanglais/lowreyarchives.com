@@ -46,7 +46,7 @@
             </div>
 
             <div v-if="value.state == VIDEO_UPLOAD_STATE.UPLOADING">
-              <UProgress :value="value.progress"></UProgress>
+              <UProgress :value="value.progress"/>
             </div>
             <div v-if="value.state == VIDEO_UPLOAD_STATE.COMPLETED">
               <span class="accent-red-600">Upload Completed</span>

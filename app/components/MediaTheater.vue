@@ -38,13 +38,13 @@ const isLast = computed(() => props.isLast ?? false);
       <ModernPlayer
         v-if="isVideo"
         :src="media.url"
-        class="max-h-full max-w-full"
+        class="max-h-full"
       />
       <img
         v-else
         :src="media.url"
-        class="max-h-full max-w-full"
-        alt="media.title"
+        class="max-h-full"
+        :alt="media.description"
       >
       <!-- Navigation Buttons -->
       <UButton

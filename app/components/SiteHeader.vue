@@ -98,5 +98,8 @@ const asideLinks = computed(() => {
 
       <UButton v-if="!!user" to="/logout" label="Logout" color="primary" />
     </template>
+    <template #body>
+      <UNavigationMenu :items="links" orientation="vertical" class="-mx-2.5" />
+    </template>
   </UHeader>
 </template>

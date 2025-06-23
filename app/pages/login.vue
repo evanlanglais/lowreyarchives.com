@@ -51,7 +51,7 @@
             <template #validation>
               <UAlert
                 v-if="loginState == LoginStateEnum.ErrorTokenVerify"
-                color="red"
+                color="error"
                 icon="i-heroicons-information-circle-20-solid"
                 title="Token Authentication Failure"
                 description="We weren't able to verify the token provided. Please try again."
@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import type { FormError } from "#ui/types";
+import type {FormError, FormSubmitEvent} from "#ui/types";
 // import { UAuthForm } from "#components";
 import * as z from 'zod'
 
@@ -107,7 +107,7 @@ const loginSchema = z.object({
 type LoginSchema = z.output<typeof loginSchema>
 
 const tokenSchema = z.object({
-  token: z.string()
+  token: z.array(z.string()).length(6),
 })
 
 type TokenSchema = z.output<typeof tokenSchema>
@@ -170,7 +170,7 @@ const submitTokenVerification = async (payload: FormSubmitEvent<TokenSchema>) =>
 
   const { error } = await client.auth.verifyOtp({
     email: email.value,
-    token: payload.data.token,
+    token: payload.data.token.join(''),
     type: "email",
   });
 

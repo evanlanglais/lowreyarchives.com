@@ -17,13 +17,13 @@
             icon="i-heroicons-lock-closed"
             :ui="{ base: 'text-center', footer: 'text-center' }"
             :fields="loginFields"
-            :validate="loginValidate"
+            :schema="loginSchema"
             @submit="submitLoginRequest"
           >
             <template #validation>
               <UAlert
                 v-if="loginState == LoginStateEnum.ErrorSignIn"
-                color="red"
+                color="error"
                 icon="i-heroicons-information-circle-20-solid"
                 title="Email Authentication Failure"
                 description="That email was unable to properly initiate an authentication request. Please try again."
@@ -42,7 +42,7 @@
             icon="i-heroicons-lock-closed"
             :ui="{ base: 'text-center', footer: 'text-center' }"
             :fields="otpFields"
-            :validate="otpValidate"
+            :schema="tokenSchema"
             @submit="submitTokenVerification"
           >
             <template #description>
@@ -51,7 +51,7 @@
             <template #validation>
               <UAlert
                 v-if="loginState == LoginStateEnum.ErrorTokenVerify"
-                color="red"
+                color="error"
                 icon="i-heroicons-information-circle-20-solid"
                 title="Token Authentication Failure"
                 description="We weren't able to verify the token provided. Please try again."
@@ -65,8 +65,9 @@
 </template>
 
 <script setup lang="ts">
-import type { FormError } from "#ui/types";
-import { UAuthForm } from "#components";
+import type {FormError, FormSubmitEvent} from "#ui/types";
+// import { UAuthForm } from "#components";
+import * as z from 'zod'
 
 enum LoginStateEnum {
   Init = 0,
@@ -92,45 +93,60 @@ const redirectTo = `${runtimeConfig.public.baseUrl}/confirm`;
 const loginFields = [
   {
     name: "email",
-    type: "text",
+    type: "text" as const,
     label: "Email",
     placeholder: "Enter your email",
+    required: true,
   },
 ];
 
-const loginValidate = (state: any) => {
-  const errors: FormError[] = [];
-  if (!state.email) {
-    errors.push({ path: "email", message: "Email is required" });
-  }
+const loginSchema = z.object({
+  email: z.string().email('Invalid email'),
+});
 
-  return errors;
-};
+type LoginSchema = z.output<typeof loginSchema>
+
+const tokenSchema = z.object({
+  token: z.array(z.string()).length(6),
+})
+
+type TokenSchema = z.output<typeof tokenSchema>
+
+// const loginValidate = (state: any) => {
+//   const errors: FormError[] = [];
+//   if (!state.email) {
+//     errors.push({ path: "email", message: "Email is required" });
+//   }
+//
+//   return errors;
+// };
 
 const otpFields = [
   {
-    name: "token",
-    type: "text",
-    label: "Token",
-    placeholder: "Enter token sent to you",
-  },
+    name: 'token',
+    type: 'otp' as const,
+    otp: {
+      length: 6,
+    },
+    required: true,
+  }
 ];
 
-const otpValidate = (state: any) => {
-  const errors: FormError[] = [];
-  if (!state.token) {
-    errors.push({ path: "token", message: "Token is required" });
-  }
+// const otpValidate = (state: any) => {
+//   const errors: FormError[] = [];
+//   if (!state.token) {
+//     errors.push({ path: "token", message: "Token is required" });
+//   }
+//
+//   return errors;
+// };
 
-  return errors;
-};
-
-const submitLoginRequest = async (data: any) => {
+const submitLoginRequest = async (payload: FormSubmitEvent<LoginSchema>) => {
   setLoading(true);
   setState(LoginStateEnum.WaitingSignIn);
 
   const { error } = await client.auth.signInWithOtp({
-    email: data.email,
+    email: payload.data.email,
     options: {
       shouldCreateUser: false,
       emailRedirectTo: redirectTo,
@@ -140,21 +156,21 @@ const submitLoginRequest = async (data: any) => {
   if (error) {
     setState(LoginStateEnum.ErrorSignIn);
   } else {
-    email.value = data.email;
+    email.value = payload.data.email;
     setState(LoginStateEnum.TokenInput);
   }
 
   setLoading(false);
 };
 
-const submitTokenVerification = async (data: any) => {
+const submitTokenVerification = async (payload: FormSubmitEvent<TokenSchema>) => {
   setLoading(true);
 
   setState(LoginStateEnum.WaitingTokenVerify);
 
   const { error } = await client.auth.verifyOtp({
     email: email.value,
-    token: data.token,
+    token: payload.data.token.join(''),
     type: "email",
   });
 

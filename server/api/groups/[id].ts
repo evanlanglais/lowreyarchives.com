@@ -1,6 +1,6 @@
 import { useDataCache } from "#nuxt-multi-cache/composables";
 import { serverSupabaseClient } from "#supabase/server";
-import { GroupWrapper } from "#shared/types/group";
+import type { GroupWrapper } from "#shared/types/group";
 import { useGroupInfoCacheKey } from "#shared/utils/cacheKeys";
 
 export default defineEventHandler(async (event): Promise<GroupWrapper> => {

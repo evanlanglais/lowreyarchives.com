@@ -1,4 +1,4 @@
-import { H3Event } from "h3";
+import type { H3Event } from "h3";
 import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
 
 async function getH3EventClaims(event: H3Event) {

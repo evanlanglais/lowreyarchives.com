@@ -1,5 +1,5 @@
 import { serverSupabaseUser } from "#supabase/server";
-import { GroupWrapper } from "#shared/types/group";
+import type { GroupWrapper } from "#shared/types/group";
 
 export default defineEventHandler(async (event): Promise<GroupWrapper[]> => {
   const user = await serverSupabaseUser(event);

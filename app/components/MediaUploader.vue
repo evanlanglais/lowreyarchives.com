@@ -272,7 +272,7 @@ async function startBulkUpload() {
             v-if="value.state == MEDIA_UPLOAD_STATE.UPLOADING"
             :value="value.progress"
             indicator
-          ></UProgress>
+          />
           <p
             v-if="value.state == MEDIA_UPLOAD_STATE.COMPLETED"
             class="text-green-400"
@@ -323,7 +323,7 @@ async function startBulkUpload() {
           multiple
           accept="image/*,video/*"
           @change="(e) => onMediaSelectedForUpload(e.target.files)"
-        />
+        >
       </div>
     </template>
   </UCard>

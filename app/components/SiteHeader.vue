@@ -86,23 +86,20 @@ const asideLinks = computed(() => {
 </script>
 
 <template>
-  <ClientOnly>
-    <UHeader :links="links">
-      <template #logo>
-        <h2>Lowrey Archives</h2>
-      </template>
+  <UHeader>
+    <template #title>
+      <h2>Lowrey Archives</h2>
+    </template>
 
-      <template #panel>
-        <UAsideLinks :links="asideLinks" />
-      </template>
+    <UNavigationMenu :items="links" />
 
-      <template #right>
-        <UColorModeButton />
+    <template #right>
+      <UColorModeButton />
 
-        <UButton v-if="!!user" to="/logout" label="Logout" color="green" />
-      </template>
-    </UHeader>
-  </ClientOnly>
+      <UButton v-if="!!user" to="/logout" label="Logout" color="primary" />
+    </template>
+    <template #body>
+      <UNavigationMenu :items="links" orientation="vertical" class="-mx-2.5" />
+    </template>
+  </UHeader>
 </template>
-
-<style scoped></style>

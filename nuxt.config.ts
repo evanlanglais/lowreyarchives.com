@@ -7,13 +7,14 @@ export default defineNuxtConfig({
   },
   ssr: false,
   modules: [
+    '@nuxt/eslint',
+    '@nuxt/image',
+    "@nuxt/ui-pro",
+    '@vueuse/nuxt',
     "@nuxtjs/supabase",
-    "@nuxtjs/eslint-module",
-    "@nuxt/ui",
-    "@nuxtjs/fontaine",
-    "@nuxtjs/google-fonts",
     "nuxt-multi-cache",
     "@pinia/nuxt",
+    "@nuxt/image",
   ],
   runtimeConfig: {
     public: {
@@ -36,7 +37,6 @@ export default defineNuxtConfig({
       saveRedirectToCookie: true,
     },
   },
-  extends: ["@nuxt/ui-pro"],
   nitro: {
     azure: {
       config: {
@@ -68,6 +68,7 @@ export default defineNuxtConfig({
       isCustomElement: (tag) => tag.startsWith("media-"),
     },
   },
+  css: ["~/assets/css/main.css"],
   vite: {
     plugins: [vidstack()],
   },

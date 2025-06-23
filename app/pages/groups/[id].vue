@@ -74,7 +74,7 @@ const links = computed(() => [
             :key="event.id"
             :to="`/groups/${groupId}/events/${event.id}`"
           >
-            <EventCard :event="event"></EventCard>
+            <EventCard :event="event"/>
             <!--              <UPageCard>-->
             <!--                <template #title>-->
             <!--                  <span class="line-clamp-2">{{ event.title }}</span>-->

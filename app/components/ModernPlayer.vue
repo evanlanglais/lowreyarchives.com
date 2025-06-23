@@ -24,7 +24,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <media-player ref="player" :src="src">
+  <media-player ref="player" :src="src" load="play" posterLoad="eager">
     <media-provider></media-provider>
     <media-video-layout></media-video-layout>
   </media-player>

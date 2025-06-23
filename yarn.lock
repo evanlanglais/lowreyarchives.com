@@ -9660,7 +9660,7 @@ vaul-vue@^0.4.1:
     reka-ui "^2.0.0"
     vue "^3.4.5"
 
-vidstack@^1.11.18:
+vidstack@^1.12.13:
   version "1.12.13"
   resolved "https://registry.yarnpkg.com/vidstack/-/vidstack-1.12.13.tgz#0d6c857eee9d566fd70f6a4579126ec437d0c1bf"
   integrity sha512-vuNeyRmWoH/7EoFVDYjp9nkgcqtCMmal518LDeb78dYKgWb+p6+vtY0AzDhrkBv5q1UiCn+xwmjMmwvSlPLuhQ==

@@ -2,9 +2,6 @@
 import { vite as vidstack } from "vidstack/plugins";
 
 export default defineNuxtConfig({
-  future: {
-    compatibilityVersion: 4,
-  },
   ssr: false,
   modules: [
     '@nuxt/eslint',

@@ -30,7 +30,10 @@ export async function mediaWrapperFromDatabaseMediaRow(
         .from("video")
         .createSignedUrl(mediaRow.media_url, cacheLength);
 
-      media.url = data?.signedUrl;
+      if (!!data && data.signedUrl !== undefined) {
+          media.url = data.signedUrl;
+      }
+
       break;
     }
     case MediaType.CloudflareVideo: {

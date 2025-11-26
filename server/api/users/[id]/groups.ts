@@ -1,6 +1,6 @@
 import { useDataCache } from "#nuxt-multi-cache/composables";
 import { serverSupabaseClient } from "#supabase/server";
-import type { Tables } from "#shared/types/supabase";
+import type { Tables } from "#shared/types/database.types";
 import type { GroupWrapper } from "#shared/types/group";
 import { useUserGroupsCacheKey } from "#shared/utils/cacheKeys";
 
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event): Promise<GroupWrapper[]> => {
     .from("group-users")
     .select(`...groups (*)`)
     .eq("user_id", id)
-    .returns<Array<Tables<"groups">>>();
+    .overrideTypes<Array<Tables<"groups">>>();
 
   if (error) {
     throw createError({

@@ -1,77 +1,26 @@
 <script setup lang="ts">
-import type { GroupWrapper } from "#shared/types/group";
-import { useUserStore } from "~/stores/user";
 
 const user = useSupabaseUser();
-// const userGroups = ref<GroupWrapper[]>();
-// const userStore = useUserStore();
-
-// watch(
-//   user,
-//   async () => {
-//     if (user.value) {
-//       userGroups.value = await userStore.getUserGroups(user.value.id);
-//     }
-//   },
-//   { immediate: false },
-// );
+const route = useRoute();
 
 const links = computed(() => {
   if (user.value) {
-    return [
-      {
-        label: "Home",
-        icon: "i-heroicons-home",
-        to: "/",
-      },
-      {
-        label: "Archive",
-        icon: "i-heroicons-archive-box",
-        to: "/archive",
-        // children: userGroups.value
-        //   ? userGroups.value.map((item) => {
-        //       return {
-        //         label: item.group_name,
-        //         icon: "i-heroicons-user-group",
-        //         to: `/groups/${item.id}`,
-        //       };
-        //     })
-        //   : [],
-      },
-    ];
-  } else {
-    return [
-      {
-        label: "Login",
-        icon: "i-fa-sign-in",
-        to: "/login",
-      },
-    ];
-  }
-});
+    const isArchiveActive = route.path.startsWith("/archive");
+    const isHomeActive = route.path === "/";
 
-const asideLinks = computed(() => {
-  if (user.value) {
     return [
       {
         label: "Home",
         icon: "i-heroicons-home",
         to: "/",
+        active: isHomeActive,
       },
       {
         label: "Archive",
         icon: "i-heroicons-archive-box",
         to: "/archive",
+        active: isArchiveActive,
       },
-      // ...(userGroups.value
-      //   ? userGroups.value.map((item) => {
-      //       return {
-      //         label: item.group_name,
-      //         icon: "i-heroicons-user-group",
-      //         to: `/groups/${item.id}`,
-      //       };
-      //     })
-      //   : []),
     ];
   } else {
     return [
@@ -79,6 +28,7 @@ const asideLinks = computed(() => {
         label: "Login",
         icon: "i-fa-sign-in",
         to: "/login",
+        active: route.path.startsWith("/login"),
       },
     ];
   }

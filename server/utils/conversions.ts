@@ -1,5 +1,5 @@
 import type { H3Event } from "h3";
-import type { Database, Tables } from "#shared/types/supabase";
+import type { Database, Tables } from "#shared/types/database.types";
 import type { MediaWrapper } from "#shared/types/media";
 import { MediaType } from "#shared/types/media";
 import { serverSupabaseClient } from "#supabase/server";

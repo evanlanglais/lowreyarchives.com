@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import "vidstack/bundle";
-import type { MediaPlayerElement } from "vidstack/elements";
-import { onBeforeUnmount, ref } from "vue";
+import 'vidstack/bundle';
+import type {MediaPlayerElement} from "vidstack/elements";
+import {onBeforeUnmount, ref} from "vue";
 // Import styles.
 import "vidstack/player/styles/default/theme.css";
 import "vidstack/player/styles/default/layouts/audio.css";
@@ -24,7 +24,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <media-player ref="player" :src="src" load="play" posterLoad="eager">
+  <media-player ref="player" :src="src" playsInline>
     <media-provider></media-provider>
     <media-video-layout></media-video-layout>
   </media-player>

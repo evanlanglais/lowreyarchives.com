@@ -1,7 +1,18 @@
 <template>
   <UContainer>
     <UPage class="flex flex-col h-full">
-      <UBreadcrumb :links="links" class="mt-2 mb-2" />
+      <div class="flex items-center gap-2 mt-2 mb-2">
+        <UButton
+          icon="i-heroicons-arrow-left"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          @click="goBack"
+        >
+          Back
+        </UButton>
+      </div>
+
       <UPageHeader
         :title="!!eventInfo ? eventInfo.title : ''"
         :description="
@@ -9,14 +20,6 @@
         "
         :headline="headline"
       />
-      <!--        :links="[-->
-      <!--          {-->
-      <!--            label: 'Upload Media',-->
-      <!--            click: () => (isMediaUploaderOpen = true),-->
-      <!--            icon: 'i-heroicons-arrow-up-tray',-->
-      <!--          },-->
-      <!--        ]"-->
-      <!--    />-->
       <UPageBody>
         <!-- MediaTheater pinned at top -->
         <div class="shrink-0" :style="`height: ${theaterHeight}%`">
@@ -60,8 +63,10 @@ import MediaTheater from "~/components/MediaTheater.vue";
 import MediaGrid from "~/components/MediaGrid.vue";
 import type { MediaWrapper } from "~/types";
 import { useEventStore } from "~/stores/event";
+import { useRouter } from "vue-router";
 
 const route = useRoute();
+const router = useRouter();
 const eventId = useFlattenParam(route.params.id);
 const eventInfo = ref(null);
 const isLoading = ref(false);
@@ -82,7 +87,7 @@ const filteredMedia = computed(() => {
   return mediaItems.value;
 });
 
-const currentIndex = ref(-1);
+const currentIndex = ref(0);
 const currentMedia = computed(
   () => filteredMedia.value[currentIndex.value] || null,
 );
@@ -92,29 +97,6 @@ const isLast = computed(
   () => currentIndex.value === filteredMedia.value.length - 1,
 );
 
-const links = computed(() => [
-  {
-    label: "Home",
-    icon: "i-heroicons-home",
-    to: "/",
-  },
-  {
-    label: "Archive",
-    icon: "i-heroicons-archive-box",
-    to: "/archive",
-  },
-  // {
-  //   label: `${groupInfo.value ? groupInfo.value.group_name : "Loading..."}`,
-  //   icon: "i-heroicons-user-group",
-  //   to: `/groups/${groupId}`,
-  // },
-  {
-    label: `${eventInfo.value ? eventInfo.value.title : "Loading..."}`,
-    icon: "i-heroicons-calendar",
-    to: `/events/${eventId}`,
-  },
-]);
-
 const headline = computed(() => {
   if (!eventInfo.value) {
     return "";
@@ -122,6 +104,10 @@ const headline = computed(() => {
 
   return useEventDateString(eventInfo.value);
 });
+
+function goBack() {
+  router.push("/archive");
+}
 
 function setMediaByIndex(idx: number) {
   if (idx >= 0 && idx < filteredMedia.value.length) {

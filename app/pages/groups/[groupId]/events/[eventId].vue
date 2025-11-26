@@ -89,7 +89,7 @@ const photos = computed((): Array<MediaWrapper> => {
 <template>
   <UContainer>
     <UPage>
-      <UBreadcrumb :links="links" class="mt-2 mb-2" />
+      <UBreadcrumb :items="links" class="mt-2 mb-2" />
       <UPageHeader
         :title="!!eventInfo ? eventInfo.title : ''"
         :description="

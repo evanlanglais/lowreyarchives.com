@@ -122,6 +122,17 @@ function nextMedia() {
   if (currentIndex.value < filteredMedia.value.length - 1) currentIndex.value++;
 }
 
+// Keyboard navigation
+onKeyStroke("ArrowLeft", (e) => {
+  e.preventDefault();
+  prevMedia();
+});
+
+onKeyStroke("ArrowRight", (e) => {
+  e.preventDefault();
+  nextMedia();
+});
+
 // Infinite scroll logic
 const gridWrapper = ref<HTMLElement | null>(null);
 const sentinel = ref<HTMLElement | null>(null);

@@ -1,5 +1,5 @@
 import type { H3Event } from "h3";
-import type { Database, Tables } from "#shared/types/supabase";
+import type { Database, Tables } from "#shared/types/database.types";
 import type { MediaWrapper } from "#shared/types/media";
 import { MediaType } from "#shared/types/media";
 import { serverSupabaseClient } from "#supabase/server";
@@ -30,7 +30,10 @@ export async function mediaWrapperFromDatabaseMediaRow(
         .from("video")
         .createSignedUrl(mediaRow.media_url, cacheLength);
 
-      media.url = data?.signedUrl;
+      if (!!data && data.signedUrl !== undefined) {
+          media.url = data.signedUrl;
+      }
+
       break;
     }
     case MediaType.CloudflareVideo: {

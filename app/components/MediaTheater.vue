@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, defineEmits, defineProps } from "vue";
-import { MediaType, type MediaWrapper } from "#shared/types/media";
+import {computed, defineEmits, defineProps} from "vue";
+import {MediaType, type MediaWrapper} from "#shared/types/media";
 
 const props = defineProps<{
   media: MediaWrapper | null;
@@ -11,7 +11,7 @@ const props = defineProps<{
 const emit = defineEmits(['previous', 'next']);
 
 const isVideo = computed((): boolean => {
-  if (!props.media){
+  if (!props.media) {
     return false;
   }
 
@@ -36,32 +36,32 @@ const isLast = computed(() => props.isLast ?? false);
   <div class="relative h-full flex items-center justify-center">
     <template v-if="media">
       <ModernPlayer
-        v-if="isVideo"
-        :src="media.url"
-        class="max-h-full"
+          v-if="isVideo"
+          :src="media.url"
+          class="max-h-full"
       />
       <img
-        v-else
-        :src="media.url"
-        class="max-h-full"
-        :alt="media.description"
+          v-else
+          :src="media.url"
+          class="max-h-full"
+          :alt="media.description"
       >
       <!-- Navigation Buttons -->
       <UButton
-        v-if="!isFirst"
-        icon="i-heroicons-chevron-left"
-        variant="ghost"
-        size="lg"
-        class="absolute left-4 rounded-full z-50"
-        @click="$emit('previous')"
+          v-if="!isFirst"
+          icon="i-heroicons-chevron-left"
+          variant="ghost"
+          size="lg"
+          class="absolute left-4 rounded-full z-50"
+          @click="$emit('previous')"
       />
       <UButton
-        v-if="!isLast"
-        icon="i-heroicons-chevron-right"
-        variant="ghost"
-        size="lg"
-        class="absolute right-4 rounded-full z-50"
-        @click="$emit('next')"
+          v-if="!isLast"
+          icon="i-heroicons-chevron-right"
+          variant="ghost"
+          size="lg"
+          class="absolute right-4 rounded-full z-50"
+          @click="$emit('next')"
       />
     </template>
     <UPageCTA

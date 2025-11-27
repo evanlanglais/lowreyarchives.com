@@ -1,6 +1,6 @@
 import { useDataCache } from "#nuxt-multi-cache/composables";
 import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
-import type { Tables } from "#shared/types/supabase";
+import type { Tables } from "#shared/types/database.types";
 import type { EventWrapper } from "#shared/types/event";
 import { useGroupEventsCacheKey } from "#shared/utils/cacheKeys";
 

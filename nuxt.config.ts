@@ -31,7 +31,7 @@ export default defineNuxtConfig({
             login: "/login",
             callback: "/confirm",
             exclude: [],
-            saveRedirectToCookie: true,
+            saveRedirectToCookie: false,
         },
         types: "#shared/types/database.types.ts",
     },

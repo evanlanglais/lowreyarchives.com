@@ -195,4 +195,17 @@ function setLoading(state: boolean) {
 function setState(state: LoginStateEnum) {
   loginState.value = state;
 }
+
+const user = useSupabaseUser();
+
+watch(
+    user,
+    () => {
+      if (user.value) {
+        // Redirect to path
+        return navigateTo("/");
+      }
+    },
+    { immediate: true },
+);
 </script>

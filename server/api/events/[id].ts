@@ -1,4 +1,4 @@
-import { useDataCache } from "#nuxt-multi-cache/composables";
+import { useDataCache } from '#imports';
 import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
 import type { EventWrapper } from "#shared/types/event";
 import { useEventInfoCacheKey } from "#shared/utils/cacheKeys";

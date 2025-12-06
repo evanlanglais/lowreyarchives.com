@@ -1,4 +1,4 @@
-import { useDataCache } from "#nuxt-multi-cache/composables";
+import { useDataCache } from '#imports';
 import { serverSupabaseClient } from "#supabase/server";
 import type { GroupWrapper } from "#shared/types/group";
 import { useGroupInfoCacheKey } from "#shared/utils/cacheKeys";

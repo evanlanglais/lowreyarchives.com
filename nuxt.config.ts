@@ -1,5 +1,6 @@
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
 import {vite as vidstack} from "vidstack/plugins";
+import { isBrowser } from 'es-toolkit/predicate';
 
 export default defineNuxtConfig({
     ssr: false,
@@ -27,6 +28,14 @@ export default defineNuxtConfig({
         cloudflareStreamKeyJwt: "",
     },
     supabase: {
+        clientOptions: {
+            auth: {
+                flowType: 'pkce',
+                autoRefreshToken: isBrowser(),
+                detectSessionInUrl: isBrowser(),
+                persistSession: true,
+            }
+        },
         redirectOptions: {
             login: "/login",
             callback: "/confirm",
@@ -73,17 +82,10 @@ export default defineNuxtConfig({
     experimental: {
         payloadExtraction: true,
     },
-    compatibilityDate: "2024-10-15",
+    compatibilityDate: "2025-12-06",
     multiCache: {
         data: {
             enabled: true,
-        },
-        // Cache Management API.
-        api: {
-            enabled: true,
-
-            // Use a different prefix for the API endpoints.
-            prefix: "/api/nuxt-multi-cache",
         },
     },
 });

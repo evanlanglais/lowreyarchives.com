@@ -4,13 +4,18 @@
       <UPageHeader
         headline="Archives"
         title="View the archives"
-        description="Sift through all the different uploads from within your family groups"
+        description="Sift through memories of years past added by family"
       />
       <UPageBody>
-        <div class="flex justify-between items-center mb-4">
-           <h3 class="text-lg font-semibold">All Events</h3>
-           <div class="flex items-center gap-2">
-             <span class="text-sm text-gray-500">Items per page:</span>
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+           <div class="flex items-center gap-2 w-full sm:w-auto">
+             <UInput 
+                v-model="searchQuery" 
+                icon="i-heroicons-magnifying-glass" 
+                placeholder="Search..." 
+                class="w-full sm:w-64"
+             />
+             <span class="text-sm text-gray-500 hidden sm:inline">Items per page:</span>
              <USelect
                v-model="pageSize"
                :items="[20, 50, 100]"
@@ -65,17 +70,20 @@
 import { DateTime } from "luxon";
 import type { GroupWrapper } from "#shared/types/group";
 import type { EventWrapper } from "#shared/types/event";
+import {debounce} from "es-toolkit";
 
 useHead({
   title: 'Archive | Lowrey Archives',
 });
 
 const user = useSupabaseUser();
+const userStore = useUserStore();
 const events = ref<EventWrapper[]>([]);
 const loading = ref(false);
 const hasMore = ref(true);
 const page = ref(1);
 const pageSize = ref(20);
+const searchQuery = ref("");
 
 const sentinel = ref<HTMLElement | null>(null);
 let observer: IntersectionObserver | null = null;
@@ -86,12 +94,12 @@ const loadEvents = async () => {
 
   loading.value = true;
   try {
-    const newEvents = await $fetch<EventWrapper[]>(`/api/users/${user.value.sub}/events`, {
-      params: {
-        page: page.value,
-        pageSize: pageSize.value
-      }
-    });
+    const newEvents = await userStore.getUserEvents(
+        user.value.sub, 
+        page.value, 
+        pageSize.value,
+        { search: searchQuery.value }
+    );
 
     if (newEvents.length < pageSize.value) {
       hasMore.value = false;
@@ -143,6 +151,12 @@ watch(sentinel, (el) => {
   }
 });
 
+const debouncedSearch = debounce(() => {
+  resetAndLoad();
+}, 500);
+
+// Watch for search query changes
+watch(searchQuery, () => debouncedSearch());
 
 // Re-fetch if user changes (unlikely in this context but good practice)
 watch(user, () => {

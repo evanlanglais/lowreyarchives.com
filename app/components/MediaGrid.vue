@@ -21,7 +21,6 @@
 </template>
 
 <script setup lang="ts">
-import {defineEmits, defineProps} from "vue";
 import {MediaType, type MediaWrapper} from "#shared/types/media";
 
 const props = defineProps<{

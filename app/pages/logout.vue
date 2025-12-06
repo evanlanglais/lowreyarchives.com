@@ -1,5 +1,8 @@
 <script setup lang="ts">
-definePageMeta({ layout: "default" });
+useHead({
+  title: 'Logout | Lowrey Archives',
+});
+
 const user = useSupabaseUser();
 
 const client = useSupabaseClient();

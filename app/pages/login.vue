@@ -67,6 +67,10 @@ import type {FormError, FormSubmitEvent} from "#ui/types";
 // import { UAuthForm } from "#components";
 import * as z from 'zod'
 
+useHead({
+  title: 'Login | Lowrey Archives',
+});
+
 enum LoginStateEnum {
   Init = 0,
   WaitingSignIn,

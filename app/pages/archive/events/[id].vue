@@ -74,6 +74,10 @@ const isMediaLoading = ref(false);
 const hasMore = ref(true);
 const eventStore = useEventStore();
 
+useHead({
+  title: computed(() => `${(!!eventInfo.value ? eventInfo.value.title : '')} | Lowrey Archives`),
+});
+
 // Input props/data could come from store or fetch
 const mediaItems = ref<MediaWrapper[]>(new Array<MediaWrapper>());
 const filterText = ref("");

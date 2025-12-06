@@ -8,6 +8,10 @@
 </template>
 
 <script setup lang="ts">
+useHead({
+  title: 'Home | Lowrey Archives',
+});
+
 const links = ref([
   {
     label: 'View Archive',

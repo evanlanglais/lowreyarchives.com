@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, defineEmits, defineProps} from "vue";
+import {computed} from "vue";
 import {MediaType, type MediaWrapper} from "#shared/types/media";
 
 const props = defineProps<{

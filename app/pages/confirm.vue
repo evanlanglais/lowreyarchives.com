@@ -1,4 +1,8 @@
 <script setup lang="ts">
+useHead({
+  title: 'Confirm Login | Lowrey Archives',
+});
+
 const user = useSupabaseUser();
 
 watch(

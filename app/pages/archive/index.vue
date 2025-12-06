@@ -66,6 +66,10 @@ import { DateTime } from "luxon";
 import type { GroupWrapper } from "#shared/types/group";
 import type { EventWrapper } from "#shared/types/event";
 
+useHead({
+  title: 'Archive | Lowrey Archives',
+});
+
 const user = useSupabaseUser();
 const events = ref<EventWrapper[]>([]);
 const loading = ref(false);

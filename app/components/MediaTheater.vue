@@ -33,42 +33,57 @@ const isLast = computed(() => props.isLast ?? false);
 </script>
 
 <template>
-  <div class="relative h-full flex items-center justify-center">
+  <div class="relative h-full w-full">
     <template v-if="media">
-      <ModernPlayer
-          v-if="isVideo"
-          :src="media.url"
-          class="max-h-full"
-      />
-      <img
-          v-else
-          :src="media.url"
-          class="max-h-full"
-          :alt="media.description"
-      >
-      <!-- Navigation Buttons -->
-      <UButton
-          v-if="!isFirst"
-          icon="i-heroicons-chevron-left"
-          variant="ghost"
-          size="lg"
-          class="absolute left-4 rounded-full z-50"
-          @click="$emit('previous')"
-      />
-      <UButton
-          v-if="!isLast"
-          icon="i-heroicons-chevron-right"
-          variant="ghost"
-          size="lg"
-          class="absolute right-4 rounded-full z-50"
-          @click="$emit('next')"
-      />
+      <div class="h-full w-full grid grid-cols-2 grid-rows-[1fr_auto] md:grid-cols-[auto_1fr_auto] md:grid-rows-1 gap-2 p-2">
+        <div class="col-start-1 row-start-2 md:col-start-1 md:row-start-1 flex items-center justify-end md:justify-center">
+          <UButton
+              :class="{ invisible: isFirst }"
+              :disabled="isFirst"
+              icon="i-heroicons-chevron-left"
+              variant="ghost"
+              size="lg"
+              class="rounded-full"
+              @click="$emit('previous')"
+          />
+        </div>
+
+        <div class="col-span-2 row-start-1 md:col-span-1 md:col-start-2 md:row-start-1 min-h-0 min-w-0 flex items-center justify-center overflow-hidden relative">
+          <ModernPlayer
+              v-if="isVideo"
+              :src="media.url"
+              class="max-h-full max-w-full object-contain"
+          />
+          <img
+              v-else
+              :src="media.url"
+              class="max-h-full max-w-full object-contain"
+              :alt="media.description"
+          >
+        </div>
+
+        <div class="col-start-2 row-start-2 md:col-start-3 md:row-start-1 flex items-center justify-start md:justify-center">
+          <UButton
+              :class="{ invisible: isLast }"
+              :disabled="isLast"
+              icon="i-heroicons-chevron-right"
+              variant="ghost"
+              size="lg"
+              class="rounded-full"
+              @click="$emit('next')"
+          />
+        </div>
+      </div>
     </template>
-    <UPageCTA
+    <div
         v-else
-        title="No Media Selected"
-        description="Select media below to view on the big screen!"
-    />
+        class="h-full flex items-center justify-center"
+    >
+      <UPageCTA
+          title="No Media Selected"
+          description="Select media below to view on the big screen!"
+      />
+    </div>
   </div>
 </template>
 

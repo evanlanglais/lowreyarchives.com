@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { generateGUID, runWithConcurrencyLimit } from "#shared/utils/utils";
+import * as tus from "tus-js-client";
 
 enum UPLOADER_STATE {
   INITIAL,
+  QUEUED,
   UPLOADING,
   FAILED,
   COMPLETED,
@@ -32,10 +34,25 @@ class MediaUploadState {
   }
 }
 
+const props = defineProps<{
+  manualTrigger?: boolean
+}>();
+
 const uploaderState = ref<UPLOADER_STATE>(UPLOADER_STATE.INITIAL);
+const selectedFiles = ref<File[]>([]);
 const mediaUploadStateMap = ref<Map<string, MediaUploadState>>(
-  new Map<string, MediaUploadState>(),
+    new Map<string, MediaUploadState>(),
 );
+
+// Watch for new files and immediately queue them
+watch(selectedFiles, (newFiles) => {
+  if (newFiles.length > 0) {
+    onMediaSelectedForUpload(newFiles);
+    // Clear selected files so duplicates can be re-added if desired,
+    // and to keep this array as a temporary buffer.
+    selectedFiles.value = [];
+  }
+});
 
 async function uploadMedia(key: string, file: File): Promise<boolean> {
   const chunkSize = 50 * 1024 * 1024; // 50MB
@@ -43,10 +60,15 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
   const fileName = file.name;
   const fileSize = file.size;
 
+  updateMediaUploadProgress(key, 0);
+
+  // Branch logic: Videos go to Cloudflare Stream (TUS), others (Images) go to S3
+  if (fileType.startsWith("video/")) {
+    return await uploadVideoToCloudflare(key, file);
+  }
+
   let uploadKey: string | null = null;
   let uploadId: string | null = null;
-
-  updateMediaUploadProgress(key, 0);
 
   try {
     console.log(`${key} starting multipartupload request`);
@@ -71,7 +93,7 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
       for (let j = 0; j < 5; j++) {
         try {
           console.log(
-            `${key} starting to get chunk ${i} of ${chunks} upload url`,
+              `${key} starting to get chunk ${i} of ${chunks} upload url`,
           );
           const response = await $fetch("/api/get-chunk-upload-url", {
             method: "post",
@@ -142,10 +164,64 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
   return false;
 }
 
-function onMediaSelectedForUpload(e: FileList) {
-  for (let i = 0; i < e.length; i++) {
-    const file: File | null = e.item(i);
+async function uploadVideoToCloudflare(key: string, file: File): Promise<boolean> {
+  try {
+    // 1. Get the direct upload URL from our server
+    const { uploadUrl, mediaId } = await $fetch("/api/create-cloudflare-upload", {
+      method: "POST",
+      body: {
+        size: file.size,
+        name: file.name,
+      },
+    });
 
+    // 2. Use tus-js-client to upload
+    return new Promise<boolean>((resolve, reject) => {
+      const upload = new tus.Upload(file, {
+        uploadUrl,
+        chunkSize: 50 * 1024 * 1024, // 50MB chunks
+        retryDelays: [0, 3000, 5000, 10000, 20000],
+        metadata: {
+          filename: file.name,
+          filetype: file.type,
+        },
+        onError: (error) => {
+          console.error("TUS Upload Failed:", error);
+          failMediaUpload(key, "Failed to upload video: " + error.message);
+          resolve(false);
+        },
+        onProgress: (bytesUploaded, bytesTotal) => {
+          const percentage = (bytesUploaded / bytesTotal) * 100;
+          updateMediaUploadProgress(key, percentage);
+        },
+        onSuccess: () => {
+          console.log(`Upload finished. Media ID: ${mediaId}`);
+          completeMediaUpload(key);
+          resolve(true);
+        },
+      });
+
+      // Check if there are any previous uploads to continue.
+      upload.findPreviousUploads().then(function (previousUploads) {
+        // Found previous uploads, so we select the first one.
+        if (previousUploads.length && previousUploads[0]) {
+          upload.resumeFromPreviousUpload(previousUploads[0])
+        }
+
+        // Start the upload
+        upload.start()
+      });
+    });
+  } catch (error: any) {
+    console.error("Failed to start TUS upload:", error);
+    failMediaUpload(key, error?.statusMessage || "Failed to initialize upload");
+    return false;
+  }
+}
+
+function onMediaSelectedForUpload(e: FileList | File[]) {
+  const files = Array.isArray(e) ? e : Array.from(e);
+  for (const file of files) {
     if (!file) {
       throw createError("bad file");
     }
@@ -164,7 +240,7 @@ function addMediaToUploadQueue(key: string, media: File) {
 
 function pendMediaUpload(key: string) {
   const mediaUploadState: MediaUploadState | undefined =
-    mediaUploadStateMap.value.get(key);
+      mediaUploadStateMap.value.get(key);
   if (mediaUploadState === undefined) {
     throw createError("what");
   }
@@ -175,7 +251,7 @@ function pendMediaUpload(key: string) {
 
 function updateMediaUploadProgress(key: string, progress: number) {
   const mediaUploadState: MediaUploadState | undefined =
-    mediaUploadStateMap.value.get(key);
+      mediaUploadStateMap.value.get(key);
   if (mediaUploadState === undefined) {
     throw createError("what");
   }
@@ -187,7 +263,7 @@ function updateMediaUploadProgress(key: string, progress: number) {
 
 function failMediaUpload(key: string, reason: string) {
   const mediaUploadState: MediaUploadState | undefined =
-    mediaUploadStateMap.value.get(key);
+      mediaUploadStateMap.value.get(key);
   if (mediaUploadState === undefined) {
     throw createError("what");
   }
@@ -199,7 +275,7 @@ function failMediaUpload(key: string, reason: string) {
 
 function completeMediaUpload(key: string) {
   const mediaUploadState: MediaUploadState | undefined =
-    mediaUploadStateMap.value.get(key);
+      mediaUploadStateMap.value.get(key);
   if (mediaUploadState === undefined) {
     throw createError("what");
   }
@@ -208,11 +284,13 @@ function completeMediaUpload(key: string) {
   mediaUploadStateMap.value.set(key, mediaUploadState);
 }
 
-function openFilePicker() {
-  document.getElementById("mediaFilePicker")!.click();
-}
-
 async function startBulkUpload() {
+  // If any files were lingering in selectedFiles (unlikely due to watch), add them
+  if (selectedFiles.value.length > 0) {
+    onMediaSelectedForUpload(selectedFiles.value);
+    selectedFiles.value = [];
+  }
+
   uploaderState.value = UPLOADER_STATE.UPLOADING;
 
   mediaUploadStateMap.value.forEach((_, key) => pendMediaUpload(key));
@@ -230,6 +308,17 @@ async function startBulkUpload() {
     ? UPLOADER_STATE.FAILED
     : UPLOADER_STATE.COMPLETED;
 }
+
+function setUploaderState(state: UPLOADER_STATE) {
+  uploaderState.value = state;
+}
+
+defineExpose({
+  startBulkUpload,
+  mediaUploadStateMap,
+  uploaderState,
+  setUploaderState
+});
 </script>
 
 <template>
@@ -237,96 +326,109 @@ async function startBulkUpload() {
     <template #header>
       <div>
         <p class="content-center text-lg font-bold">Media Uploader</p>
-        <p class="text-sm">Select all files you'd like to upload</p>
       </div>
     </template>
 
     <div v-if="mediaUploadStateMap.size == 0">
-      <p>Select files to queue them for upload</p>
+      <UFileUpload
+        v-model="selectedFiles"
+        label="Select or drop files to upload"
+        description="Select as many photos, videos, and other media files as you'd like."
+        icon="i-heroicons-folder-open"
+        multiple
+        accept="image/*,video/*"
+        class="w-full"
+        variant="area"
+        layout="list"
+        position="inside"
+      />
     </div>
-    <div v-if="mediaUploadStateMap.size > 0" class="max-h-64 overflow-y-auto">
-      <div
-        v-for="[key, value] of mediaUploadStateMap"
-        :key="key"
-        class="py-2 border-b last:border-none flex items-center space-x-4 border-gray-700"
-      >
-        <span class="text-blue-500">
-          <UIcon name="i-heroicons-photo" />
-        </span>
 
-        <span class="flex-1">
-          {{ value.name }}
-        </span>
+    <div v-if="mediaUploadStateMap.size > 0">
+      <div class="mb-4" v-if="uploaderState == UPLOADER_STATE.INITIAL">
+         <UFileUpload
+             v-model="selectedFiles"
+             label="Add more files"
+             icon="i-heroicons-plus"
+             multiple
+             accept="image/*,video/*"
+             class="w-full"
+         />
+      </div>
 
-        <span class="w-1/4 items-center">
-          <UButton
-            v-if="value.state == MEDIA_UPLOAD_STATE.INITIAL"
-            :padded="false"
-            color="gray"
-            variant="link"
-            icon="i-heroicons-x-mark-20-solid"
-            @click="removeMediaFromUploadQueue(key)"
-          />
-          <p v-if="value.state == MEDIA_UPLOAD_STATE.PENDING">Queued</p>
-          <UProgress
-            v-if="value.state == MEDIA_UPLOAD_STATE.UPLOADING"
-            :value="value.progress"
-            indicator
-          />
-          <p
-            v-if="value.state == MEDIA_UPLOAD_STATE.COMPLETED"
-            class="text-green-400"
-          >
-            Complete
-          </p>
-          <p
-            v-if="value.state == MEDIA_UPLOAD_STATE.FAILED"
-            class="text-red-400"
-          >
-            Failed: {{ value.errorText }}
-          </p>
-        </span>
+      <div class="max-h-64 overflow-y-auto">
+        <div
+            v-for="[key, value] of mediaUploadStateMap"
+            :key="key"
+            class="py-2 border-b last:border-none flex items-center space-x-4 border-gray-700"
+        >
+          <span class="text-blue-500">
+            <UIcon name="i-heroicons-photo"/>
+          </span>
+
+          <span class="flex-1 truncate">
+            {{ value.name }}
+          </span>
+
+          <span class="w-1/4 flex items-center justify-end">
+            <UButton
+                v-if="uploaderState == UPLOADER_STATE.INITIAL"
+                :padded="false"
+                color="neutral"
+                variant="link"
+                icon="i-heroicons-x-mark-20-solid"
+                @click="removeMediaFromUploadQueue(key)"
+            />
+            <p v-if="value.state == MEDIA_UPLOAD_STATE.PENDING" class="text-sm text-gray-500">Queued</p>
+            <UProgress
+                v-if="value.state == MEDIA_UPLOAD_STATE.UPLOADING"
+                :value="value.progress"
+                indicator
+            />
+            <p
+                v-if="value.state == MEDIA_UPLOAD_STATE.COMPLETED"
+                class="text-green-400 text-sm"
+            >
+              Complete
+            </p>
+            <p
+                v-if="value.state == MEDIA_UPLOAD_STATE.FAILED"
+                class="text-red-400 text-sm"
+            >
+              Failed
+            </p>
+          </span>
+        </div>
       </div>
     </div>
 
-    <template #footer>
+    <template v-if="!manualTrigger" #footer>
       <div
-        v-if="
+          v-if="
           uploaderState == UPLOADER_STATE.INITIAL ||
           uploaderState == UPLOADER_STATE.COMPLETED ||
           uploaderState == UPLOADER_STATE.FAILED
         "
+          class="flex flex-col gap-4"
       >
         <UAlert
-          v-if="uploaderState == UPLOADER_STATE.FAILED"
-          color="red"
-          title="Finished -- Some uploads failed"
-          class="mb-2"
+            v-if="uploaderState == UPLOADER_STATE.FAILED"
+            color="error"
+            title="Finished -- Some uploads failed"
         />
         <UAlert
-          v-if="uploaderState == UPLOADER_STATE.COMPLETED"
-          color="green"
-          title="Finished -- All uploads succeeded"
-          class="mb-2"
+            v-if="uploaderState == UPLOADER_STATE.COMPLETED"
+            color="success"
+            title="Finished -- All uploads succeeded"
         />
-        <UButton @click="openFilePicker">Select Files to Upload</UButton>
+
         <UButton
-          v-if="mediaUploadStateMap.size > 0"
-          class="ml-2"
-          @click="startBulkUpload"
-          >Begin Bulk Upload</UButton
-        >
-        <input
-          id="mediaFilePicker"
-          type="file"
-          hidden="hidden"
-          multiple
-          accept="image/*,video/*"
-          @change="(e) => onMediaSelectedForUpload(e.target.files)"
-        >
+            v-if="mediaUploadStateMap.size > 0"
+            block
+            @click="startBulkUpload"
+            label="Begin Upload"
+        />
       </div>
     </template>
   </UCard>
 </template>
-
-<style scoped></style>

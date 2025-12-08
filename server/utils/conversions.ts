@@ -44,7 +44,7 @@ export async function mediaWrapperFromDatabaseMediaRow(
         );
 
         media.url = `https://customer-${runtimeConfig.cloudflareStreamCode}.cloudflarestream.com/${token}/manifest/video.m3u8`;
-        media.image = `https://customer-${runtimeConfig.cloudflareStreamCode}.cloudflarestream.com/${token}/thumbnails/thumbnail.jpg`;
+        media.image = `https://customer-${runtimeConfig.cloudflareStreamCode}.cloudflarestream.com/${token}/thumbnails/thumbnail.jpg?time=8s`;
       } catch (error) {
         console.error(error);
       }

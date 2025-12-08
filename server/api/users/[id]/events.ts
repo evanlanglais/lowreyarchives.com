@@ -11,6 +11,15 @@ export default defineEventHandler(async (event): Promise<EventWrapper[]> => {
   const pageSize = Number(query.pageSize) || 20;
   const offset = (page - 1) * pageSize;
 
+  // Extract filters (excluding pagination) to support extensible filtering
+  const { page: _p, pageSize: _ps, ...filters } = query;
+
+  // Create a deterministic string from filters for the cache key
+  const filterKeyPart = Object.entries(filters)
+    .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+    .map(([k, v]) => `${k}=${v}`)
+    .join('&');
+
   if (!id) {
     throw createError({
       statusCode: 400,
@@ -18,8 +27,8 @@ export default defineEventHandler(async (event): Promise<EventWrapper[]> => {
     });
   }
 
-  // Create a cache key including ID and pagination params
-  const cacheKey = `user-events:${id}:page:${page}:size:${pageSize}`;
+  // Create a cache key including ID, pagination params, and filters
+  const cacheKey = `user-events:${id}:page:${page}:size:${pageSize}:${filterKeyPart}`;
   // Cache for 5 minutes (300 seconds) or however long is appropriate
   const cacheDuration = 300;
 
@@ -98,10 +107,18 @@ export default defineEventHandler(async (event): Promise<EventWrapper[]> => {
 
   // 4. Fetch the actual events with pagination
   // We sort by start_date usually, or created_at
-  const { data: events, error: eventsError } = await client
+  let queryBuilder = client
     .from("events")
     .select("*")
-    .in("id", allEventIds)
+    .in("id", allEventIds);
+
+  // Apply extensible filters
+  if (filters.search) {
+    const s = String(filters.search);
+    queryBuilder = queryBuilder.or(`title.ilike.%${s}%,description.ilike.%${s}%`);
+  }
+
+  const { data: events, error: eventsError } = await queryBuilder
     .order("start_date", { ascending: true })
     .range(offset, offset + pageSize - 1)
     .overrideTypes<Array<Tables<"events">>>();

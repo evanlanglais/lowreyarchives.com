@@ -15,7 +15,7 @@ export default defineEventHandler(async (event): Promise<void> => {
   const key = body.key;
 
   const params = {
-    Bucket: runtimeConfig.minioBucket,
+    Bucket: runtimeConfig.s3DmzBucket,
     Key: key,
     UploadId: uploadId,
   };

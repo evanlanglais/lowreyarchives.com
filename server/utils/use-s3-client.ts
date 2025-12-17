@@ -1,16 +1,18 @@
-import { S3 } from "@aws-sdk/client-s3";
+import {S3} from "@aws-sdk/client-s3";
+
 const runtimeConfig = useRuntimeConfig();
 
 const s3Client = new S3({
-  forcePathStyle: true, // Configures to use subdomain/virtual calling format.
-  endpoint: "http://minio.lowreyarchives.com:9000",
-  region: "us-east-1",
-  credentials: {
-    accessKeyId: runtimeConfig.minioKey,
-    secretAccessKey: runtimeConfig.minioKeySecret,
-  },
+    forcePathStyle: true,
+    endpoint: runtimeConfig.s3Url,
+    region: runtimeConfig.s3Region,
+    credentials: {
+        accessKeyId: runtimeConfig.s3Key,
+        secretAccessKey: runtimeConfig.s3KeySecret,
+    },
+    requestChecksumCalculation: "WHEN_REQUIRED",
 });
 
 export default function () {
-  return s3Client;
+    return s3Client;
 }

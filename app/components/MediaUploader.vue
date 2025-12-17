@@ -55,17 +55,12 @@ watch(selectedFiles, (newFiles) => {
 });
 
 async function uploadMedia(key: string, file: File): Promise<boolean> {
-  const chunkSize = 50 * 1024 * 1024; // 50MB
+  const chunkSize = 20 * 1024 * 1024;
   const fileType = file.type;
   const fileName = file.name;
   const fileSize = file.size;
 
   updateMediaUploadProgress(key, 0);
-
-  // Branch logic: Videos go to Cloudflare Stream (TUS), others (Images) go to S3
-  if (fileType.startsWith("video/")) {
-    return await uploadVideoToCloudflare(key, file);
-  }
 
   let uploadKey: string | null = null;
   let uploadId: string | null = null;
@@ -112,7 +107,7 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
               "Content-Type": fileType,
             },
             body: chunk,
-            timeout: 2 * 60 * 1000,
+            timeout: 60 * 1000,
           });
           console.log(`${key} finished putting chunk for ${i}`);
 
@@ -382,8 +377,8 @@ defineExpose({
             <p v-if="value.state == MEDIA_UPLOAD_STATE.PENDING" class="text-sm text-gray-500">Queued</p>
             <UProgress
                 v-if="value.state == MEDIA_UPLOAD_STATE.UPLOADING"
-                :value="value.progress"
-                indicator
+                v-model="value.progress"
+                status
             />
             <p
                 v-if="value.state == MEDIA_UPLOAD_STATE.COMPLETED"

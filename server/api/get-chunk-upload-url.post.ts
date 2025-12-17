@@ -20,7 +20,7 @@ export default defineEventHandler(
     const key = body.key;
 
     const params = {
-      Bucket: runtimeConfig.minioBucket,
+      Bucket: runtimeConfig.s3DmzBucket,
       Key: key,
       ContentType: fileType,
       UploadId: uploadId,

@@ -93,11 +93,30 @@ export default defineEventHandler(async (event): Promise<EventWrapper[]> => {
   if (userEventsError) {
     throw createError({ statusCode: 500, statusMessage: "Error fetching user events" });
   }
-  
+
   const userEventIds = directUserEvents.map(ue => ue.event_id);
 
   // Combine and deduplicate IDs
-  const allEventIds = Array.from(new Set([...groupEventIds, ...userEventIds]));
+  let allEventIds = Array.from(new Set([...groupEventIds, ...userEventIds]));
+
+  // 4. If filtering by tagged user, intersect with events where that user is tagged
+  if (filters.taggedUserId) {
+    const taggedUserId = filters.taggedUserId === "@me" ? id : String(filters.taggedUserId);
+
+    const { data: taggedEvents, error: taggedError } = await client
+      .from("user-events")
+      .select("event_id")
+      .eq("user_id", taggedUserId)
+      .eq("relationship_type", "tagged");
+
+    if (taggedError) {
+      throw createError({ statusCode: 500, statusMessage: "Error fetching tagged events" });
+    }
+
+    const taggedEventIds = new Set(taggedEvents.map((te) => te.event_id));
+    // Intersect: only keep events that are both accessible and have the tagged user
+    allEventIds = allEventIds.filter((eventId) => taggedEventIds.has(eventId));
+  }
 
   if (allEventIds.length === 0) {
     // Cache empty result too

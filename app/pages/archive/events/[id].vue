@@ -91,7 +91,7 @@ const eventStore = useEventStore();
 const isMediaUploaderOpen = ref(false);
 
 useHead({
-  title: computed(() => `${(!!eventInfo.value ? eventInfo.value.title : '')} | Lowrey Archives`),
+  title: computed(() => `${(eventInfo.value ? eventInfo.value.title : '')} | Lowrey Archives`),
 });
 
 // Input props/data could come from store or fetch

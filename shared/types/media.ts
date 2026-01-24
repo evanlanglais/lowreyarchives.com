@@ -5,12 +5,41 @@ export enum MediaType {
   Video,
   BucketVideo,
   CloudflareVideo,
+  BucketPhoto,
 }
+
+export enum MediaStatus {
+  Pending = "pending",
+  Processing = "processing",
+  Ready = "ready",
+  Failed = "failed",
+}
+
+export type MediaVariant = {
+  id: number;
+  variantType: "original" | "optimized" | "thumbnail" | string;
+  bucket: string;
+  storagePath: string;
+  url?: string; // Presigned URL (populated by API)
+  fileSize?: number;
+  mimeType?: string;
+  width?: number;
+  height?: number;
+  durationSeconds?: number;
+};
 
 export type MediaWrapper = {
   id: number;
   description: string | null;
-  image: string | null;
-  url: string;
-  type: MediaType;
+  status: MediaStatus;
+
+  // Whether this media should be played with a video player
+  isVideo: boolean;
+
+  // Primary URLs (ready to use by frontend)
+  url: string; // Optimized/playback URL
+  thumbnailUrl: string | null; // Thumbnail URL (for grid display)
+
+  // All available variants (for downloads, etc.)
+  variants: MediaVariant[];
 };

@@ -35,7 +35,8 @@ class MediaUploadState {
 }
 
 const props = defineProps<{
-  manualTrigger?: boolean
+  manualTrigger?: boolean;
+  eventId?: number;
 }>();
 
 const uploaderState = ref<UPLOADER_STATE>(UPLOADER_STATE.INITIAL);
@@ -55,7 +56,8 @@ watch(selectedFiles, (newFiles) => {
 });
 
 async function uploadMedia(key: string, file: File): Promise<boolean> {
-  const chunkSize = 20 * 1024 * 1024;
+  const runtimeConfig = useRuntimeConfig();
+  const chunkSize = runtimeConfig.public.uploadChunkSize;
   const fileType = file.type;
   const fileName = file.name;
   const fileSize = file.size;
@@ -130,12 +132,18 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
     }
 
     console.log(`${key} finishing`);
+
+    // Determine media type based on file MIME type
+    const mediaType = file.type.startsWith("video/") ? "video" : "photo";
+
     await $fetch("/api/finish-multipart-upload", {
       method: "post",
       body: {
         key: startUploadResponse.key,
         uploadId: startUploadResponse.uploadId,
         parts: uploadedParts,
+        eventId: props.eventId,
+        mediaType,
       },
     });
     console.log(`${key} finished`);
@@ -171,10 +179,11 @@ async function uploadVideoToCloudflare(key: string, file: File): Promise<boolean
     });
 
     // 2. Use tus-js-client to upload
+    const runtimeConfig = useRuntimeConfig();
     return new Promise<boolean>((resolve, reject) => {
       const upload = new tus.Upload(file, {
         uploadUrl,
-        chunkSize: 50 * 1024 * 1024, // 50MB chunks
+        chunkSize: runtimeConfig.public.tusChunkSize,
         retryDelays: [0, 3000, 5000, 10000, 20000],
         metadata: {
           filename: file.name,
@@ -340,7 +349,7 @@ defineExpose({
     </div>
 
     <div v-if="mediaUploadStateMap.size > 0">
-      <div class="mb-4" v-if="uploaderState == UPLOADER_STATE.INITIAL">
+      <div v-if="uploaderState == UPLOADER_STATE.INITIAL" class="mb-4">
          <UFileUpload
              v-model="selectedFiles"
              label="Add more files"
@@ -420,8 +429,8 @@ defineExpose({
         <UButton
             v-if="mediaUploadStateMap.size > 0"
             block
-            @click="startBulkUpload"
             label="Begin Upload"
+            @click="startBulkUpload"
         />
       </div>
     </template>

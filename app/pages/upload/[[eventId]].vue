@@ -45,7 +45,7 @@
 
         <!-- Step 1: Select Event -->
         <div v-show="currentStep === 1" class="space-y-6 max-w-2xl mx-auto">
-          <UTabs :items="eventSelectionTabs" v-model="eventSelectionMode" />
+          <UTabs v-model="eventSelectionMode" :items="eventSelectionTabs" />
 
           <UCard v-if="eventSelectionMode === 'existing'">
             <template #header>
@@ -120,6 +120,51 @@
               <UFormField label="Tags">
                 <UInput v-model="newEventData.tags" placeholder="Comma separated tags" class="w-full" />
               </UFormField>
+
+              <UDivider label="Sharing Options" />
+
+              <UFormField label="Share with Groups" description="Select groups that can view this event">
+                <div v-if="loadingGroups" class="py-2">
+                  <UIcon name="i-heroicons-arrow-path" class="animate-spin text-gray-400" />
+                  <span class="ml-2 text-gray-500">Loading groups...</span>
+                </div>
+                <div v-else-if="groupSelectItems.length > 0" class="space-y-2">
+                  <div
+                    v-for="group in groupSelectItems"
+                    :key="group.value"
+                    class="flex items-center gap-2"
+                  >
+                    <UCheckbox
+                      :model-value="selectedGroups.includes(group.value)"
+                      @update:model-value="(checked: boolean | 'indeterminate') => {
+                        if (checked === true) {
+                          selectedGroups.push(group.value);
+                        } else {
+                          selectedGroups = selectedGroups.filter(id => id !== group.value);
+                        }
+                      }"
+                    />
+                    <span>{{ group.label }}</span>
+                  </div>
+                </div>
+                <p v-else class="text-gray-500 text-sm">No groups available</p>
+              </UFormField>
+
+              <UFormField label="Tag Participants" description="Tag people who were part of this event">
+                <UserSelectMenu
+                  v-model="taggedUsers"
+                  placeholder="Search for participants..."
+                  :suggestions="allGroupMembers"
+                />
+              </UFormField>
+
+              <UFormField label="Share with Specific Users" description="Give access to individual users">
+                <UserSelectMenu
+                  v-model="sharedWithUsers"
+                  placeholder="Search for users to share with..."
+                  :suggestions="allGroupMembers"
+                />
+              </UFormField>
             </div>
           </UCard>
         </div>
@@ -161,6 +206,7 @@
           <MediaUploader
             ref="uploaderRef"
             manual-trigger
+            :event-id="targetEventId"
           />
 
           <!-- Step 3 Specific: Summary Stats -->
@@ -185,9 +231,9 @@
               <UButton
                 variant="link"
                 color="neutral"
-                @click="currentStep = 2"
                 label="Edit Queue"
                 :padded="false"
+                @click="currentStep = 2"
               />
             </div>
           </UCard>
@@ -202,7 +248,7 @@
             icon="i-heroicons-arrow-left"
             @click="handleBack"
           />
-          <div v-else></div> <!-- Spacer -->
+          <div v-else/> <!-- Spacer -->
 
           <div class="flex gap-2">
              <UButton
@@ -233,7 +279,7 @@
         </div>
         
         <!-- Bottom spacer for the fixed footer -->
-        <div class="h-20"></div>
+        <div class="h-20"/>
 
       </UPageBody>
     </UPage>
@@ -245,6 +291,8 @@ import { ref, computed, reactive, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import MediaUploader from '~/components/MediaUploader.vue';
 import type { EventWrapper } from '#shared/types/event';
+import type { UserProfile, GroupWithMembers } from '#shared/types/user';
+import type { GroupWrapper } from '#shared/types/group';
 import { debounce } from "es-toolkit";
 import { useUserStore } from "~/stores/user";
 
@@ -259,6 +307,7 @@ const user = useSupabaseUser();
 const currentStep = ref(1);
 const uploaderRef = ref<InstanceType<typeof MediaUploader> | null>(null);
 const isUploading = ref(false);
+const targetEventId = ref<number | undefined>(undefined);
 
 // Step 1 State
 const eventSelectionMode = ref<'existing' | 'new'>('existing');
@@ -282,6 +331,35 @@ const newEventData = reactive({
   startDate: new Date().toISOString().split('T')[0],
   endDate: '',
   tags: ''
+});
+
+// Sharing State
+const userGroups = ref<GroupWrapper[]>([]);
+const groupMembers = ref<GroupWithMembers[]>([]);
+const selectedGroups = ref<number[]>([]);
+const taggedUsers = ref<UserProfile[]>([]);
+const sharedWithUsers = ref<UserProfile[]>([]);
+const loadingGroups = ref(false);
+
+// All unique users from all groups for suggestions
+const allGroupMembers = computed(() => {
+  const uniqueUsers = new Map<string, UserProfile>();
+  for (const group of groupMembers.value) {
+    for (const member of group.members) {
+      if (!uniqueUsers.has(member.id)) {
+        uniqueUsers.set(member.id, member);
+      }
+    }
+  }
+  return Array.from(uniqueUsers.values());
+});
+
+// Convert groups to select menu items
+const groupSelectItems = computed(() => {
+  return userGroups.value.map((g) => ({
+    label: g.group_name,
+    value: g.id,
+  }));
 });
 
 const eventSelectionTabs = [
@@ -348,8 +426,11 @@ const queuedTotalSize = computed(() => {
 });
 
 // Methods
-function selectEvent(event: EventWrapper) {
+function selectEvent(event: EventWrapper | null) {
   selectedEvent.value = event;
+  if (event && currentStep.value === 1) {
+    currentStep.value = 2;
+  }
 }
 
 function handleBack() {
@@ -399,7 +480,17 @@ const debouncedSearch = debounce(() => {
 }, 500);
 
 watch(eventSearchQuery, () => debouncedSearch());
-    
+
+// Update URL and targetEventId when event is selected
+watch(selectedEvent, (newEvent) => {
+  if (eventSelectionMode.value === 'existing') {
+    router.replace({
+      params: { ...route.params, eventId: newEvent?.id || 'new' }
+    });
+    targetEventId.value = newEvent?.id;
+  }
+});
+
 // Manage Uploader State based on Step
 watch(currentStep, (newStep) => {
   if (newStep === 3) {
@@ -428,38 +519,42 @@ async function handleConfirmUpload() {
   isUploading.value = true;
 
   try {
-    let targetEventId: number | string = '';
-
     // 1. Handle Event Creation/Selection
     if (eventSelectionMode.value === 'new') {
-      // TODO: Call API to create event
-      console.log('Creating new event:', newEventData);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      targetEventId = 'new-event-id-123'; 
+      const newEvent = await $fetch('/api/events/new', {
+        method: 'POST',
+        body: {
+          title: newEventData.title,
+          description: newEventData.description || null,
+          location: newEventData.location || null,
+          startDate: newEventData.startDate,
+          endDate: newEventData.endDate || null,
+          shareWithGroups: selectedGroups.value,
+          taggedUsers: taggedUsers.value.map((u) => u.id),
+          shareWithUsers: sharedWithUsers.value.map((u) => u.id),
+        },
+      });
+
+      targetEventId.value = newEvent.id;
     } else {
-      targetEventId = selectedEvent.value?.id || 0;
+      targetEventId.value = selectedEvent.value?.id;
     }
 
     // 2. Trigger Upload
-    if (uploaderRef.value) {
-      // In a real app, you might pass targetEventId to the uploader 
-      // or set it in the store before uploading.
-      console.log(`Uploading media to event: ${targetEventId}`);
-      
+    if (uploaderRef.value && targetEventId.value) {
+      console.log(`Uploading media to event: ${targetEventId.value}`);
+
       await uploaderRef.value.startBulkUpload();
-      
-      // Check for success (simple check based on component state if needed)
-      // The uploader handles its own success/fail state UI.
+
+      // Navigate to the event page after successful upload
+      if (uploaderRef.value?.uploaderState === 4) { // COMPLETED
+        router.push(`/archive/events/${targetEventId.value}`);
+      }
     }
   } catch (error) {
     console.error('Upload process failed', error);
   } finally {
     isUploading.value = false;
-    // Optionally redirect or show success message if complete
-    if (uploaderRef.value?.uploaderState === 3) { // COMPLETED
-        // Could navigate away or show specific success modal
-    }
   }
 }
 
@@ -474,16 +569,35 @@ function formatBytes(bytes: number, decimals = 2) {
 
 onMounted(async () => {
   // Initialize
-  if (eventIdParam) {
+  if (eventIdParam && eventIdParam !== 'new') {
     const pId = parseInt(eventIdParam);
     if (!isNaN(pId)) {
       const [eventValue] = await Promise.all([eventStore.getEvent(pId)]);
-      selectEvent(eventValue);
+      if (eventValue) {
+        selectedEvent.value = eventValue;
+        targetEventId.value = eventValue.id;
+        currentStep.value = 2;
+      }
     }
   }
 
   if (user.value) {
     await loadEvents();
+
+    // Load user's groups and group members for sharing options
+    loadingGroups.value = true;
+    try {
+      const [groups, membersData] = await Promise.all([
+        userStore.getUserGroups(user.value.sub),
+        userStore.getGroupMembers(),
+      ]);
+      userGroups.value = groups;
+      groupMembers.value = membersData.groups;
+    } catch (e) {
+      console.error("Failed to load groups", e);
+    } finally {
+      loadingGroups.value = false;
+    }
   }
 });
 </script>

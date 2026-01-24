@@ -20,15 +20,18 @@ onMounted(async () => {
   loading.value = false;
 });
 
-// const eventMedia = await eventStore.getEventMedia(props.event.id);
+// Limit thumbnails shown in carousel for performance
+const MAX_THUMBNAILS = 5;
+
 const eventThumbnails = computed((): Array<string> => {
   if (!eventMedia.value) {
     return [];
   }
 
   return eventMedia.value
-      .map((media: MediaWrapper) => media.image)
-      .filter((image) => image != null);
+      .slice(0, MAX_THUMBNAILS)
+      .map((media: MediaWrapper) => media.thumbnailUrl ?? media.url)
+      .filter((url): url is string => url != null && url !== "");
 });
 </script>
 
@@ -37,24 +40,28 @@ const eventThumbnails = computed((): Array<string> => {
       :title="props.event.title"
       :description="props.event.description"
       reverse>
-    <div class="relative w-full aspect-[4/3] rounded-lg overflow-hidden">
+    <div class="relative w-full aspect-4/3 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
       <USkeleton
           v-if="loading"
           class="w-full h-full"
       />
-      <UCarousel
-          v-else
-          ref="carouselRef"
-          v-slot="{ item }"
-          :autoplay="{ delay: 5000 }"
-          loop
-          dots
-          :items="eventThumbnails"
-          class="rounded-lg overflow-hidden"
-          :ui="{ item: 'basis-full' }"
-      >
-        <NuxtImg :src="item" class="w-full" draggable="false" placeholder/>
-      </UCarousel>
+      <template v-else-if="eventThumbnails.length > 0">
+        <UCarousel
+            ref="carouselRef"
+            v-slot="{ item }"
+            :autoplay="{ delay: 5000 }"
+            loop
+            dots
+            :items="eventThumbnails"
+            class="rounded-lg overflow-hidden h-full"
+            :ui="{ item: 'basis-full' }"
+        >
+          <img :src="item" class="w-full h-full object-cover" draggable="false" />
+        </UCarousel>
+      </template>
+      <div v-else class="w-full h-full flex items-center justify-center">
+        <UIcon name="i-heroicons-photo" class="size-12 text-gray-400" />
+      </div>
     </div>
 
     <template #footer>

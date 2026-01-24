@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import {computed} from "vue";
-import {MediaType, type MediaWrapper} from "#shared/types/media";
+import { computed } from "vue";
+import type { MediaWrapper, MediaVariant } from "#shared/types/media";
+import type { DropdownMenuItem } from "@nuxt/ui";
 
 const props = defineProps<{
   media: MediaWrapper | null;
@@ -8,34 +9,92 @@ const props = defineProps<{
   isLast?: boolean;
 }>();
 
-const emit = defineEmits(['previous', 'next']);
+const emit = defineEmits(["previous", "next"]);
 
 const isVideo = computed((): boolean => {
-  if (!props.media) {
-    return false;
-  }
-
-  switch (props.media.type) {
-    case MediaType.Video:
-    case MediaType.Youtube:
-    case MediaType.BucketVideo:
-    case MediaType.CloudflareVideo:
-      return true;
-    case MediaType.Photo:
-      return false;
-    default:
-      return false;
-  }
+  return props.media?.isVideo ?? false;
 });
 
 const isFirst = computed(() => props.isFirst ?? false);
 const isLast = computed(() => props.isLast ?? false);
+
+// Filter to only downloadable variants (not thumbnails, HLS playlists)
+const downloadableVariants = computed(() => {
+  if (!props.media?.variants) return [];
+  return props.media.variants.filter((v) =>
+    ["original", "optimized"].includes(v.variantType),
+  );
+});
+
+// Check if download should be shown
+const hasDownloads = computed(() => downloadableVariants.value.length > 0);
+
+function getVariantLabel(type: string): string {
+  switch (type) {
+    case "original":
+      return "Original (Full Quality)";
+    case "optimized":
+      return "Optimized (Web)";
+    default:
+      return type;
+  }
+}
+
+function formatFileSize(bytes?: number): string {
+  if (!bytes) return "";
+  const units = ["B", "KB", "MB", "GB"];
+  let size = bytes;
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+  return `${size.toFixed(1)} ${units[unitIndex]}`;
+}
+
+function getDownloadFilename(variant: MediaVariant): string {
+  return variant.storagePath.split("/").pop() || "download";
+}
+
+const isDownloading = ref(false);
+
+function downloadVariant(variant: MediaVariant) {
+  if (isDownloading.value) return;
+
+  isDownloading.value = true;
+  try {
+    // Use server-side proxy to avoid CORS issues and properly trigger download
+    const downloadUrl = `/api/media/download?variantId=${variant.id}`;
+
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = getDownloadFilename(variant);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } finally {
+    isDownloading.value = false;
+  }
+}
+
+// Build dropdown menu items for downloads
+const downloadMenuItems = computed((): DropdownMenuItem[] => {
+  return downloadableVariants.value.map((variant) => ({
+    label: getVariantLabel(variant.variantType),
+    icon:
+      variant.variantType === "original"
+        ? "i-heroicons-document-arrow-down"
+        : "i-heroicons-arrow-down-tray",
+    slot: variant.fileSize ? formatFileSize(variant.fileSize) : undefined,
+    onSelect: () => downloadVariant(variant),
+  }));
+});
 </script>
 
 <template>
   <div class="relative h-full w-full">
     <template v-if="media">
-      <div class="h-full w-full grid grid-cols-2 grid-rows-[1fr_auto] md:grid-cols-[auto_1fr_auto] md:grid-rows-1 gap-2 p-2">
+      <div class="h-full w-full grid grid-cols-2 grid-rows-[1fr_auto_auto] md:grid-cols-[auto_1fr_auto] md:grid-rows-[1fr_auto] gap-2 p-2">
         <div class="col-start-1 row-start-2 md:col-start-1 md:row-start-1 flex items-center justify-end md:justify-center">
           <UButton
               :class="{ invisible: isFirst }"
@@ -48,7 +107,7 @@ const isLast = computed(() => props.isLast ?? false);
           />
         </div>
 
-        <div class="col-span-2 row-start-1 md:col-span-1 md:col-start-2 md:row-start-1 min-h-0 min-w-0 flex items-center justify-center overflow-hidden relative">
+        <div class="col-span-2 row-start-1 md:col-span-1 md:col-start-2 md:row-start-1 min-h-0 min-w-0 flex items-center justify-center overflow-hidden">
           <ModernPlayer
               v-if="isVideo"
               :src="media.url"
@@ -58,8 +117,23 @@ const isLast = computed(() => props.isLast ?? false);
               v-else
               :src="media.url"
               class="max-h-full max-w-full object-contain"
-              :alt="media.description"
+              :alt="media.description ?? undefined"
           >
+        </div>
+
+        <!-- Download button - centered in bottom row on mobile -->
+        <div v-if="hasDownloads" class="col-span-2 row-start-3 md:col-span-1 md:col-start-2 md:row-start-2 flex items-center justify-center">
+          <UDropdownMenu :items="downloadMenuItems">
+            <UButton
+                icon="i-heroicons-arrow-down-tray"
+                variant="soft"
+                color="neutral"
+                size="sm"
+                :loading="isDownloading"
+            >
+              Download
+            </UButton>
+          </UDropdownMenu>
         </div>
 
         <div class="col-start-2 row-start-2 md:col-start-3 md:row-start-1 flex items-center justify-start md:justify-center">

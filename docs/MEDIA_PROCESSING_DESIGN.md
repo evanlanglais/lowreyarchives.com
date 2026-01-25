@@ -59,7 +59,7 @@ The media processing system handles uploading, processing, and serving family me
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
 │  │                    Upload Wizard (MediaUploader.vue)                 │   │
 │  │  • Select files → Queue → Review → Upload                           │   │
-│  │  • 20MB chunk uploads with retry logic                              │   │
+│  │  • 50MB chunk uploads with retry logic (configurable)               │   │
 │  │  • Real-time progress tracking                                      │   │
 │  └──────────────────────────────┬──────────────────────────────────────┘   │
 └─────────────────────────────────┼───────────────────────────────────────────┘
@@ -181,7 +181,9 @@ The media processing system handles uploading, processing, and serving family me
 | `server/api/get-chunk-upload-url.post.ts` | Returns presigned URL for chunk |
 | `server/api/finish-multipart-upload.post.ts` | Completes upload, creates DB records |
 | `server/api/abort-multipart-upload.post.ts` | Cancels failed uploads |
-| `server/utils/s3.ts` | S3 client configuration |
+| `server/api/media/download.get.ts` | Server-side download proxy (avoids CORS) |
+| `server/utils/use-s3-client.ts` | S3 client configuration |
+| `server/utils/conversions.ts` | Media type conversion and URL generation |
 
 ### 3.2 Media Processor (Go Application)
 
@@ -242,7 +244,7 @@ The media processing system handles uploading, processing, and serving family me
       Request:  { fileName: "video.mp4", fileType: "video/mp4" }
       Response: { uploadId: "abc123", key: "ingest/{uuid}_{ts}_{uid}.mp4" }
    ↓
-   b) For each 20MB chunk:
+   b) For each chunk (default 50MB, configurable):
       POST /api/get-chunk-upload-url
       Request:  { key, uploadId, partNumber, fileType }
       Response: { presignedUrl: "https://..." }
@@ -473,7 +475,8 @@ CREATE TYPE media_type AS ENUM (
   'video_url',
   'photo_url',
   'bucket_video',
-  'cloudflare_video'
+  'bucket_photo',
+  'cloudflare_video'  -- Legacy: playback only, no new uploads
 );
 ```
 
@@ -845,12 +848,19 @@ SUPABASE_SERVICE_KEY=<service-key>
 **nuxt.config.ts**:
 ```typescript
 runtimeConfig: {
+  public: {
+    uploadChunkSize: 50 * 1024 * 1024, // 50MB, configurable via NUXT_PUBLIC_UPLOAD_CHUNK_SIZE
+  },
   s3Url: process.env.S3_URL,
   s3Key: process.env.S3_KEY,
   s3KeySecret: process.env.S3_KEY_SECRET,
   s3DmzBucket: process.env.S3_DMZ_BUCKET || 'fa-dmz',
   s3MediaBucket: process.env.S3_MEDIA_BUCKET || 'fa-media',
   s3Region: process.env.S3_REGION || 'garage',
+  // Cloudflare Stream (playback only for legacy cloudflare_video media)
+  cloudflareStreamCode: process.env.CLOUDFLARE_STREAM_CODE,
+  cloudflareStreamKeyId: process.env.CLOUDFLARE_STREAM_KEY_ID,
+  cloudflareStreamKeyJwt: process.env.CLOUDFLARE_STREAM_KEY_JWT,
 }
 ```
 
@@ -943,10 +953,12 @@ See [Section 13: Media Variants Storage Design](#13-media-variants-storage-desig
 >
 > **Implementation Notes**:
 > - Database table `media_variants` created with RLS policies
-> - Frontend `MediaWrapper` type updated with `thumbnailUrl` and `variants` array
-> - `MediaGrid` uses `thumbnailUrl` for grid display
-> - `MediaTheater` includes download dropdown for original/optimized variants
-> - Media processor needs to be updated to insert variant records after processing
+> - Frontend `MediaWrapper` type updated with `isVideo`, `thumbnailUrl` and `variants` array
+> - `MediaType` enum kept server-side only; frontend uses `isVideo` boolean
+> - `MediaGrid` uses `thumbnailUrl` for grid display, `isVideo` for play icon
+> - `MediaTheater` includes download dropdown using server proxy (`/api/media/download`)
+> - Downloads use server-side proxy to avoid CORS issues with presigned S3 URLs
+> - Cloudflare video upload removed; existing cloudflare_video media still playable
 
 ### 13.1 Problem Statement
 
@@ -1142,17 +1154,22 @@ export type MediaVariant = {
 export type MediaWrapper = {
   id: number;
   description: string | null;
-  type: MediaType;
   status: MediaStatus;
 
-  // Primary URLs (for convenience, extracted from variants)
-  url: string;           // Optimized variant URL (for playback)
+  // Whether this media should be played with a video player
+  // (Computed server-side from media_type, not exposed to frontend)
+  isVideo: boolean;
+
+  // Primary URLs (ready to use by frontend)
+  url: string;           // Optimized/playback URL
   thumbnailUrl: string | null;  // Thumbnail URL (for grid display)
 
   // All available variants (for downloads, etc.)
   variants: MediaVariant[];
 };
 ```
+
+> **Note**: The `MediaType` enum is used internally on the server for URL generation logic but is not exposed to the frontend. Frontend components use `isVideo` boolean to determine playback behavior.
 
 #### Updated API: GET /api/events/{id}/media
 
@@ -1215,8 +1232,8 @@ export default defineEventHandler(async (event) => {
       return {
         id: media.id,
         description: media.description,
-        type: mediaTypeFromDatabaseMediaType(media.media_type),
         status: media.status as MediaStatus,
+        isVideo: isVideoMediaType(media.media_type),
         url: optimized?.url || '',
         thumbnailUrl: thumbnail?.url || null,
         variants: variantsWithUrls,
@@ -1250,7 +1267,7 @@ export default defineEventHandler(async (event) => {
           class="w-full h-full object-cover"
         />
         <!-- Video play indicator -->
-        <div v-if="isVideo(media)" class="absolute inset-0 flex items-center justify-center">
+        <div v-if="media.isVideo" class="absolute inset-0 flex items-center justify-center">
           <UIcon name="i-heroicons-play" class="size-16 text-white/80" />
         </div>
       </template>
@@ -1332,12 +1349,12 @@ function formatFileSize(bytes?: number): string {
   return `${size.toFixed(1)} ${units[unitIndex]}`;
 }
 
-async function downloadVariant(variant: MediaVariant) {
-  if (!variant.url) return;
+function downloadVariant(variant: MediaVariant) {
+  // Use server-side proxy to avoid CORS issues with presigned S3 URLs
+  const downloadUrl = `/api/media/download?variantId=${variant.id}`;
 
-  // Trigger download
   const link = document.createElement('a');
-  link.href = variant.url;
+  link.href = downloadUrl;
   link.download = getDownloadFilename(variant);
   document.body.appendChild(link);
   link.click();
@@ -1397,6 +1414,7 @@ function getDownloadFilename(variant: MediaVariant): string {
 │  {                                                                       │
 │    id: 123,                                                              │
 │    status: 'ready',                                                      │
+│    isVideo: true,                                                        │
 │    url: 'https://...presigned.../optimized/abc_123_user_optimized.mp4', │
 │    thumbnailUrl: 'https://...presigned.../thumbnails/abc_123_thumb.jpg',│
 │    variants: [                                                           │
@@ -1415,9 +1433,13 @@ function getDownloadFilename(variant: MediaVariant): string {
           │ Uses            │       │ Uses url for    │
           │ thumbnailUrl    │       │ playback        │
           │ for grid cards  │       │                 │
-          └─────────────────┘       │ Download menu   │
-                                    │ shows variants  │
-                                    │ with file sizes │
+          │                 │       │ Uses isVideo    │
+          │ Uses isVideo    │       │ for player type │
+          │ for play icon   │       │                 │
+          └─────────────────┘       │ Download via    │
+                                    │ server proxy    │
+                                    │ /api/media/     │
+                                    │ download        │
                                     └─────────────────┘
 ```
 

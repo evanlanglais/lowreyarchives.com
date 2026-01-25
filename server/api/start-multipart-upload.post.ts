@@ -15,10 +15,10 @@ export default defineEventHandler(
     const fileName = body.fileName;
     const fileType = body.fileType;
 
-    const key = `ingest/${generateSafeFilename(user.id, fileName)}`;
+    const key = `ingest/${generateSafeFilename(user.sub, fileName)}`;
 
     const params = {
-      Bucket: runtimeConfig.minioBucket,
+      Bucket: runtimeConfig.s3DmzBucket,
       Key: key,
       ContentType: fileType,
     };

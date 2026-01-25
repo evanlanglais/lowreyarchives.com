@@ -38,12 +38,26 @@
           class="flex-1 overflow-auto p-4"
           @scroll.passive="onScroll"
         >
-          <UInput
-            v-model="filterText"
-            placeholder="Filter media..."
-            clearable
-            class="mb-4"
-          />
+          <div class="flex items-center justify-between mb-4 gap-4">
+            <UInput
+              v-model="filterText"
+              placeholder="Filter media..."
+              clearable
+              class="w-full max-w-sm"
+            />
+            <UModal :modal="isMediaUploaderOpen">
+              <UButton
+                  label="Add Photos/Videos"
+                  icon="i-heroicons-arrow-up-tray"
+                  color="neutral"
+                  variant="outline"
+                  :to="`/upload/${eventId}`"
+              />
+              <template #content>
+                <MediaUploader />
+              </template>
+            </UModal>
+          </div>
           <MediaGrid
             :media-list="filteredMedia"
             :selected-index="currentIndex"
@@ -64,6 +78,7 @@ import MediaGrid from "~/components/MediaGrid.vue";
 import type { MediaWrapper } from "~/types";
 import { useEventStore } from "~/stores/event";
 import { useRouter } from "vue-router";
+import type {ButtonProps} from "#ui/components/Button.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -73,15 +88,24 @@ const isLoading = ref(false);
 const isMediaLoading = ref(false);
 const hasMore = ref(true);
 const eventStore = useEventStore();
+const isMediaUploaderOpen = ref(false);
 
 useHead({
-  title: computed(() => `${(!!eventInfo.value ? eventInfo.value.title : '')} | Lowrey Archives`),
+  title: computed(() => `${(eventInfo.value ? eventInfo.value.title : '')} | Lowrey Archives`),
 });
 
 // Input props/data could come from store or fetch
 const mediaItems = ref<MediaWrapper[]>(new Array<MediaWrapper>());
 const filterText = ref("");
 const theaterHeight = 40; // percentage
+
+const links: Ref<Array<ButtonProps>> = ref([
+  {
+    label: 'Add Media',
+    click: () => (isMediaUploaderOpen.value = true),
+    icon: 'i-heroicons-arrow-up-tray',
+  },
+])
 
 const filteredMedia = computed(() => {
   // if (!filterText.value) return mediaItems.value

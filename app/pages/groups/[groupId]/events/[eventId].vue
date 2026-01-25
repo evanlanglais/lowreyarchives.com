@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { DateTime } from "luxon";
-import { MediaType, type MediaWrapper } from "#shared/types/media";
+import type { MediaWrapper } from "#shared/types/media";
 import { useGroupStore } from "~/stores/group";
 import { useEventStore } from "~/stores/event";
 import MediaTheater from "~/components/MediaTheater.vue";
@@ -67,22 +67,14 @@ const videos = computed((): Array<MediaWrapper> => {
   if (!eventMedia.value) {
     return [];
   }
-
-  return eventMedia.value.filter(
-    (media) =>
-      media.type === MediaType.Video ||
-      media.type === MediaType.Youtube ||
-      media.type === MediaType.BucketVideo ||
-      media.type === MediaType.CloudflareVideo,
-  );
+  return eventMedia.value.filter((media) => media.isVideo);
 });
 
 const photos = computed((): Array<MediaWrapper> => {
   if (!eventMedia.value) {
     return [];
   }
-
-  return eventMedia.value.filter((media) => media.type === MediaType.Photo);
+  return eventMedia.value.filter((media) => !media.isVideo);
 });
 </script>
 

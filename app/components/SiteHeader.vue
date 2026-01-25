@@ -7,6 +7,7 @@ const links = computed(() => {
   if (user.value) {
     const isArchiveActive = route.path.startsWith("/archive");
     const isHomeActive = route.path === "/";
+    const isUploadActive = route.path.startsWith("/upload");
 
     return [
       {
@@ -20,6 +21,12 @@ const links = computed(() => {
         icon: "i-heroicons-archive-box",
         to: "/archive",
         active: isArchiveActive,
+      },
+      {
+        label: "Upload",
+        icon: "i-heroicons-arrow-up-tray",
+        to: "/upload",
+        active: isUploadActive,
       },
     ];
   } else {

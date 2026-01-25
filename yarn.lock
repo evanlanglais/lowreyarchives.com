@@ -2219,7 +2219,7 @@
     pkg-types "^1.2.1"
     semver "^7.6.3"
 
-"@nuxtjs/supabase@2.0.3":
+"@nuxtjs/supabase@^2.0.3":
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/@nuxtjs/supabase/-/supabase-2.0.3.tgz#0e508403ddbde04433c47720a961fb106eaffba8"
   integrity sha512-zfhuOqhbQUijMd5rXS9qzzuVqBMU00gcJyvxFuTBXdS9TAk/gboQZxxX7EQp6eAi5asvtJNM+mwBKqzQwtZi7g==

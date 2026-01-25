@@ -7,22 +7,69 @@
         description="Sift through memories of years past added by family"
       />
       <UPageBody>
-        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
-           <div class="flex items-center gap-2 w-full sm:w-auto">
-             <UInput 
-                v-model="searchQuery" 
-                icon="i-heroicons-magnifying-glass" 
-                placeholder="Search..." 
-                class="w-full sm:w-64"
-             />
-             <span class="text-sm text-gray-500 hidden sm:inline">Items per page:</span>
-             <USelect
-               v-model="pageSize"
-               :items="[20, 50, 100]"
-               @change="resetAndLoad"
-               z-100
-             />
-           </div>
+        <div class="flex flex-col gap-4 mb-4">
+          <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+             <div class="flex items-center gap-2 w-full sm:w-auto">
+               <UInput
+                  v-model="searchQuery"
+                  icon="i-heroicons-magnifying-glass"
+                  placeholder="Search..."
+                  class="w-full sm:w-64"
+               />
+               <span class="text-sm text-gray-500 hidden sm:inline">Items per page:</span>
+               <USelect
+                 v-model="pageSize"
+                 :items="[20, 50, 100]"
+                 z-100
+                 @change="resetAndLoad"
+               />
+             </div>
+          </div>
+
+          <!-- Filter by person -->
+          <div class="flex items-center gap-2">
+            <UIcon name="i-heroicons-funnel" class="text-gray-400" />
+            <span class="text-sm text-gray-500">Filter by person:</span>
+            <USelectMenu
+              v-model="selectedPersonFilter"
+              :items="personFilterOptions"
+              placeholder="All events"
+              searchable
+              clearable
+              class="w-64"
+              @update:model-value="onPersonFilterChange"
+            >
+              <template #item="{ item }">
+                <div class="flex items-center gap-2">
+                  <UAvatar
+                    v-if="item.avatarUrl"
+                    :src="item.avatarUrl"
+                    size="2xs"
+                  />
+                  <div
+                    v-else-if="item.value !== '@me'"
+                    class="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[10px]"
+                  >
+                    {{ getInitials(item.label) }}
+                  </div>
+                  <UIcon
+                    v-else
+                    name="i-heroicons-user"
+                    class="text-primary-500"
+                  />
+                  <span>{{ item.label }}</span>
+                </div>
+              </template>
+            </USelectMenu>
+            <UButton
+              v-if="selectedPersonFilter"
+              variant="ghost"
+              color="neutral"
+              icon="i-heroicons-x-mark"
+              size="xs"
+              @click="clearPersonFilter"
+            />
+          </div>
         </div>
 
         <div v-if="loading && events.length === 0" class="space-y-4">
@@ -70,7 +117,8 @@
 import { DateTime } from "luxon";
 import type { GroupWrapper } from "#shared/types/group";
 import type { EventWrapper } from "#shared/types/event";
-import {debounce} from "es-toolkit";
+import type { UserProfile, GroupWithMembers } from "#shared/types/user";
+import { debounce } from "es-toolkit";
 
 useHead({
   title: 'Archive | Lowrey Archives',
@@ -85,6 +133,58 @@ const page = ref(1);
 const pageSize = ref(20);
 const searchQuery = ref("");
 
+// Person filter state
+const selectedPersonFilter = ref<PersonFilterOption | undefined>(undefined);
+const groupMembers = ref<GroupWithMembers[]>([]);
+const loadingMembers = ref(false);
+
+type PersonFilterOption = {
+  label: string;
+  value: string;
+  avatarUrl?: string | null;
+};
+
+const personFilterOptions = computed<PersonFilterOption[]>(() => {
+  const options: PersonFilterOption[] = [
+    { label: "Events I participated in", value: "@me" },
+  ];
+
+  // Add all unique group members
+  const addedIds = new Set<string>();
+  for (const group of groupMembers.value) {
+    for (const member of group.members) {
+      if (!addedIds.has(member.id) && member.id !== user.value?.id) {
+        addedIds.add(member.id);
+        options.push({
+          label: member.display_name || member.email || "Unknown",
+          value: member.id,
+          avatarUrl: member.avatar_url,
+        });
+      }
+    }
+  }
+
+  return options;
+});
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function onPersonFilterChange() {
+  resetAndLoad();
+}
+
+function clearPersonFilter() {
+  selectedPersonFilter.value = undefined;
+  resetAndLoad();
+}
+
 const sentinel = ref<HTMLElement | null>(null);
 let observer: IntersectionObserver | null = null;
 
@@ -94,11 +194,17 @@ const loadEvents = async () => {
 
   loading.value = true;
   try {
+    const filters: Record<string, any> = { search: searchQuery.value };
+
+    if (selectedPersonFilter.value) {
+      filters.taggedUserId = selectedPersonFilter.value.value;
+    }
+
     const newEvents = await userStore.getUserEvents(
-        user.value.sub, 
-        page.value, 
+        user.value.sub,
+        page.value,
         pageSize.value,
-        { search: searchQuery.value }
+        filters
     );
 
     if (newEvents.length < pageSize.value) {
@@ -125,10 +231,26 @@ const loadNextPage = () => {
   loadEvents();
 }
 
+// Load group members for filter options
+const loadGroupMembers = async () => {
+  if (!user.value) return;
+
+  loadingMembers.value = true;
+  try {
+    const membersData = await userStore.getGroupMembers();
+    groupMembers.value = membersData.groups;
+  } catch (e) {
+    console.error("Failed to load group members", e);
+  } finally {
+    loadingMembers.value = false;
+  }
+};
+
 // Setup Intersection Observer for infinite scroll
 onMounted(() => {
   if (user.value) {
     loadEvents();
+    loadGroupMembers();
   }
 
   // Optional: Infinite scroll logic if preferred over button

@@ -36,14 +36,14 @@ export async function streamSignedUrl(videoUID: string): Promise<string> {
   return `${token}.${arrayBufferToBase64Url(signature)}`;
 }
 
-export function arrayBufferToBase64Url(buffer) {
+export function arrayBufferToBase64Url(buffer: any) {
   return btoa(String.fromCharCode(...new Uint8Array(buffer)))
     .replace(/=/g, "")
     .replace(/\+/g, "-")
     .replace(/\//g, "_");
 }
 
-export function objectToBase64url(payload) {
+export function objectToBase64url(payload: object) {
   return arrayBufferToBase64Url(
     new TextEncoder().encode(JSON.stringify(payload)),
   );

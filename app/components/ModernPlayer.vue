@@ -24,9 +24,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <media-player ref="player" :src="src" playsInline>
-    <media-provider></media-provider>
-    <media-video-layout></media-video-layout>
+  <media-player ref="player" :src="src" plays-inline>
+    <media-provider/>
+    <media-video-layout/>
   </media-player>
 </template>
 

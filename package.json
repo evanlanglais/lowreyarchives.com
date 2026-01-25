@@ -46,7 +46,6 @@
     "nuxt-multi-cache": "^4.0.3",
     "pinia": "^3.0.3",
     "tailwindcss": "^4.1.17",
-    "tus-js-client": "^4.3.1",
     "vidstack": "^1.12.13",
     "zod": "^3.25.57"
   },

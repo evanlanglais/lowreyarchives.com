@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { generateGUID, runWithConcurrencyLimit } from "#shared/utils/utils";
-import * as tus from "tus-js-client";
 
 enum UPLOADER_STATE {
   INITIAL,
@@ -165,62 +164,6 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
   }
 
   return false;
-}
-
-async function uploadVideoToCloudflare(key: string, file: File): Promise<boolean> {
-  try {
-    // 1. Get the direct upload URL from our server
-    const { uploadUrl, mediaId } = await $fetch("/api/create-cloudflare-upload", {
-      method: "POST",
-      body: {
-        size: file.size,
-        name: file.name,
-      },
-    });
-
-    // 2. Use tus-js-client to upload
-    const runtimeConfig = useRuntimeConfig();
-    return new Promise<boolean>((resolve, reject) => {
-      const upload = new tus.Upload(file, {
-        uploadUrl,
-        chunkSize: runtimeConfig.public.tusChunkSize,
-        retryDelays: [0, 3000, 5000, 10000, 20000],
-        metadata: {
-          filename: file.name,
-          filetype: file.type,
-        },
-        onError: (error) => {
-          console.error("TUS Upload Failed:", error);
-          failMediaUpload(key, "Failed to upload video: " + error.message);
-          resolve(false);
-        },
-        onProgress: (bytesUploaded, bytesTotal) => {
-          const percentage = (bytesUploaded / bytesTotal) * 100;
-          updateMediaUploadProgress(key, percentage);
-        },
-        onSuccess: () => {
-          console.log(`Upload finished. Media ID: ${mediaId}`);
-          completeMediaUpload(key);
-          resolve(true);
-        },
-      });
-
-      // Check if there are any previous uploads to continue.
-      upload.findPreviousUploads().then(function (previousUploads) {
-        // Found previous uploads, so we select the first one.
-        if (previousUploads.length && previousUploads[0]) {
-          upload.resumeFromPreviousUpload(previousUploads[0])
-        }
-
-        // Start the upload
-        upload.start()
-      });
-    });
-  } catch (error: any) {
-    console.error("Failed to start TUS upload:", error);
-    failMediaUpload(key, error?.statusMessage || "Failed to initialize upload");
-    return false;
-  }
 }
 
 function onMediaSelectedForUpload(e: FileList | File[]) {

@@ -18,7 +18,6 @@ export default defineNuxtConfig({
         public: {
             baseUrl: "https://lowreyarchives.com",
             uploadChunkSize: 50 * 1024 * 1024, // 50MB for S3 multipart uploads
-            tusChunkSize: 50 * 1024 * 1024, // 50MB for TUS/Cloudflare uploads
         },
         s3Url: "https://garage-media-s3.lowreyarchives.com",
         s3Key: "",
@@ -26,8 +25,7 @@ export default defineNuxtConfig({
         s3DmzBucket: "fa-dmz",
         s3MediaBucket: "fa-media",
         s3Region: "garage",
-        cloudflareAccount: "",
-        cloudflareKey: "",
+        // Cloudflare Stream config (for playing existing cloudflare_video media)
         cloudflareStreamCode: "",
         cloudflareStreamKeyId: "",
         cloudflareStreamKeyJwt: "",

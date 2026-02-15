@@ -1,89 +1,78 @@
-/**
- * Invalidate specific cache keys using the nuxt-multi-cache data storage.
- *
- * Use this when you know the exact cache keys to invalidate.
- * For logical invalidation, prefer `invalidateByTags()`.
- */
-export async function invalidateCacheKeys(keys: string[]): Promise<void> {
-  try {
-    const { cache } = useMultiCacheApp();
-    const dataStorage = cache.data?.storage;
-    if (dataStorage) {
-      await Promise.all(keys.map((key) => dataStorage.removeItem(key)));
-      console.log(`Cache keys invalidated: ${keys.join(", ")}`);
-    } else {
-      console.warn("Data cache storage not available");
-    }
-  } catch (e) {
-    console.warn("Failed to invalidate cache keys:", e);
-  }
+import { useNitroApp } from "nitropack/runtime";
+import {
+  useEventMediaCacheKey,
+  useEventInfoCacheKey,
+  useEventThumbnailsCacheKey,
+  useGroupEventsCacheKey,
+} from "#shared/utils/cacheKeys";
+
+function getDataStorage() {
+  const multiCache = (useNitroApp() as any).multiCache;
+  return multiCache?.cache?.data?.storage;
 }
 
 /**
- * Invalidate caches by tags using the nuxt-multi-cache CacheTagInvalidator.
- *
- * This is the preferred method for cache invalidation as it decouples
- * the invalidation logic from the cache key structure.
- *
- * Example tags:
- * - `event:123` - All caches related to event 123
- * - `media:456` - All caches containing media 456
- * - `group:789` - All caches related to group 789
- *
- * The caching code declares what tags apply to each cache entry,
- * and the invalidation code just specifies the logical entity.
+ * Immediately remove specific cache keys from the data cache storage.
  */
-export async function invalidateByTags(tags: string[]): Promise<void> {
-  try {
-    const { cacheTagInvalidator } = useMultiCacheApp();
-    cacheTagInvalidator.add(tags);
-    console.log(`Cache tag invalidation queued: ${tags.join(", ")}`);
-  } catch (e) {
-    console.warn("Failed to invalidate cache by tags:", e);
+async function removeKeys(keys: string[]): Promise<void> {
+  const storage = getDataStorage();
+  if (!storage) {
+    console.warn("Data cache storage not available");
+    return;
   }
+  await Promise.all(keys.map((key) => storage.removeItem(key)));
+  console.log(`Cache keys invalidated: ${keys.join(", ")}`);
 }
 
 /**
- * Invalidate all caches related to a specific event using tags.
- * Any cache entry tagged with `event:{eventId}` will be invalidated.
+ * Invalidate all caches related to a specific event.
  */
 export async function invalidateEventCaches(
   eventId: number,
   groupIds?: number[],
 ): Promise<void> {
-  const tags = [`event:${eventId}`];
+  const id = String(eventId);
+  const keys = [
+    useEventInfoCacheKey(id),
+    useEventMediaCacheKey(id),
+    useEventThumbnailsCacheKey(id),
+  ];
 
   if (groupIds && groupIds.length > 0) {
     for (const groupId of groupIds) {
-      tags.push(`group:${groupId}`);
+      keys.push(useGroupEventsCacheKey(String(groupId)));
     }
   }
 
-  await invalidateByTags(tags);
+  await removeKeys(keys);
 }
 
 /**
- * Invalidate caches related to a specific media item.
- * Any cache entry tagged with `media:{mediaId}` will be invalidated.
- *
- * This is useful when media status changes (pending -> ready)
- * without knowing which events contain that media.
+ * Invalidate caches that contain a specific media item.
+ * Since media is accessed through events, this requires the event ID.
  */
 export async function invalidateMediaCaches(
   mediaId: number,
+  eventId?: number,
 ): Promise<void> {
-  await invalidateByTags([`media:${mediaId}`]);
+  const keys: string[] = [];
+
+  if (eventId) {
+    const id = String(eventId);
+    keys.push(useEventMediaCacheKey(id), useEventThumbnailsCacheKey(id));
+  }
+
+  if (keys.length > 0) {
+    await removeKeys(keys);
+  }
 }
 
 /**
  * Invalidate media-related caches for an event.
  * Call this when media is uploaded, processed, or status changes.
- *
- * @deprecated Prefer `invalidateEventCaches()` or `invalidateMediaCaches()`
- * which use tag-based invalidation for better extensibility.
  */
 export async function invalidateEventMediaCache(
   eventId: number,
 ): Promise<void> {
-  await invalidateByTags([`event:${eventId}`]);
+  await invalidateEventCaches(eventId);
 }

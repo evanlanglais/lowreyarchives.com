@@ -3,6 +3,7 @@ import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
 import type { Tables } from "#shared/types/database.types";
 import type { MediaWrapper } from "#shared/types/media";
 import { useEventMediaCacheKey } from "#shared/utils/cacheKeys";
+import { mediaWrapperFromDatabaseMediaRow } from "~~/server/utils/conversions";
 
 // Type for media with variants from joined query
 type MediaWithVariants = Tables<"media"> & {

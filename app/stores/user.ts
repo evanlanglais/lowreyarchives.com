@@ -28,5 +28,5 @@ export const useUserStore = defineApiStore(
         $fetch(`/api/users/me/group-members`),
     },
   },
-  { ttlMs: 5 * 60 * 1000 },
+  {},
 );

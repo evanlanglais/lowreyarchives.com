@@ -8,16 +8,29 @@ export type CacheLoader<P extends any[], T> = {
   invalidateAll: () => void;
 };
 
+/**
+ * Normalize params to produce a stable cache key regardless of
+ * whether values are passed as strings or numbers (e.g. route
+ * params "123" vs numeric 123 produce the same key).
+ */
+function cacheKey(params: unknown[]): string {
+  return JSON.stringify(params, (_key, value) =>
+    typeof value === "number" ? String(value) : value,
+  );
+}
+
+const DEFAULT_TTL_MS = 60 * 1000; // 1 minute
+
 export function createCacheLoader<P extends any[], T>(
   fetcher: (...params: P) => Promise<T>,
   options?: { ttlMs?: number },
 ): CacheLoader<P, T> {
-  const ttlMs = options?.ttlMs ?? 5 * 60 * 1000; // default 5 min
+  const ttlMs = options?.ttlMs ?? DEFAULT_TTL_MS;
   const cache = new Map<string, CacheEntry<T>>();
   const pending = new Map<string, Promise<T>>();
 
   const loader = ((...params: P): Promise<T> => {
-    const key = JSON.stringify(params);
+    const key = cacheKey(params);
     const now = Date.now();
 
     // 1) if we have a valid cached value, return it immediately
@@ -49,7 +62,7 @@ export function createCacheLoader<P extends any[], T>(
   }) as CacheLoader<P, T>;
 
   loader.invalidate = (...params: P) => {
-    cache.delete(JSON.stringify(params));
+    cache.delete(cacheKey(params));
   };
 
   loader.invalidateAll = () => {

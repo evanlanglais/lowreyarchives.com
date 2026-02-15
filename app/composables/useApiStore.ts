@@ -1,25 +1,44 @@
 import { defineStore } from "pinia";
 import { createCacheLoader, type CacheLoader } from "~/utils/cache";
 
-type ApiMethods<Handlers extends Record<string, { fetcher: any }>> = {
-  [P in keyof Handlers]: CacheLoader<
-    Parameters<Handlers[P]["fetcher"]>,
-    Awaited<ReturnType<Handlers[P]["fetcher"]>>
-  >;
+type Fetcher = (...args: any[]) => Promise<any>;
+
+type StoreApi<Handlers extends Record<string, { fetcher: Fetcher }>> = {
+  [P in keyof Handlers]: (
+    ...args: Parameters<Handlers[P]["fetcher"]>
+  ) => Promise<Awaited<ReturnType<Handlers[P]["fetcher"]>>>;
+} & {
+  /** Invalidate a specific cached entry by handler name and params. */
+  invalidateCache: <K extends keyof Handlers>(
+    key: K,
+    ...args: Parameters<Handlers[K]["fetcher"]>
+  ) => void;
+  /** Invalidate all cached entries for a handler. */
+  invalidateCacheAll: <K extends keyof Handlers>(key: K) => void;
 };
 
 export function defineApiStore<
-  Handlers extends Record<string, { fetcher: any }>,
+  Handlers extends Record<string, { fetcher: Fetcher }>,
 >(storeId: string, handlers: Handlers, options?: { ttlMs?: number }) {
   return defineStore(storeId, () => {
-    // 2️⃣ use the alias instead of an anonymous mapped type
-    const api = {} as ApiMethods<Handlers>;
+    const loaders = {} as Record<keyof Handlers, CacheLoader<any[], any>>;
+    const api = {} as StoreApi<Handlers>;
 
     for (const key in handlers) {
-      api[key as keyof Handlers] = createCacheLoader(handlers[key].fetcher, {
+      const loader = createCacheLoader(handlers[key].fetcher, {
         ttlMs: options?.ttlMs,
-      }) as any;
+      });
+      loaders[key as keyof Handlers] = loader;
+      (api as any)[key] = (...args: any[]) => loader(...args);
     }
+
+    api.invalidateCache = (key, ...args) => {
+      loaders[key].invalidate(...args);
+    };
+
+    api.invalidateCacheAll = (key) => {
+      loaders[key].invalidateAll();
+    };
 
     return api;
   });

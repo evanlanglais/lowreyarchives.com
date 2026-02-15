@@ -1,4 +1,4 @@
-import { invalidateMediaCaches, invalidateEventCaches } from "~~/server/utils/cache-invalidation";
+import { invalidateEventCaches } from "~~/server/utils/cache-invalidation";
 
 type MediaProcessedWebhookBody = {
   mediaId: number;
@@ -47,18 +47,12 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // With tag-based invalidation, we can simply invalidate by media ID
-  // Any cache tagged with `media:{mediaId}` will be invalidated automatically
-  // No need to look up which events contain this media!
-  await invalidateMediaCaches(body.mediaId);
-
-  // If eventId is also provided, invalidate event-level caches too
   if (body.eventId) {
     await invalidateEventCaches(body.eventId);
   }
 
   console.log(
-    `Media ${body.mediaId} status changed to ${body.status}, invalidated via tags`,
+    `Media ${body.mediaId} status changed to ${body.status}, cache invalidated`,
   );
 
   return {

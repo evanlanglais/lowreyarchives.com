@@ -10,5 +10,5 @@ export const useEventStore = defineApiStore(
       fetcher: (eventId: number) => $fetch(`/api/events/${eventId}/media`),
     },
   },
-  { ttlMs: 5 * 60 * 1000 },
+  {},
 );

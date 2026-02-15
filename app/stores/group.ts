@@ -10,5 +10,5 @@ export const useGroupStore = defineApiStore(
       fetcher: async (groupId: number) => await $fetch(`/api/groups/${groupId}/events`),
     },
   },
-  { ttlMs: 5 * 60 * 1000 },
+  {},
 );

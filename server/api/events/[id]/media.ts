@@ -102,7 +102,10 @@ export default defineEventHandler(
       )
     ).filter((mediaEntry) => !!mediaEntry);
 
-    await addToCache(transformedData, [], cacheLength);
+    // Tag with event ID so we can invalidate all event-related caches at once
+    // Also tag each media item so media status changes can invalidate this cache
+    const mediaTags = transformedData.map((m) => `media:${m.id}`);
+    await addToCache(transformedData, [`event:${id}`, ...mediaTags], cacheLength);
 
     return transformedData;
   },

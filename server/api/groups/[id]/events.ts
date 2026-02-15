@@ -45,7 +45,9 @@ export default defineEventHandler(
       });
     }
 
-    await addToCache(data, [], 3600);
+    // Tag with group ID and all event IDs for tag-based cache invalidation
+    const eventTags = data.map((e) => `event:${e.id}`);
+    await addToCache(data, [`group:${id}`, ...eventTags], 3600);
 
     return data;
   },

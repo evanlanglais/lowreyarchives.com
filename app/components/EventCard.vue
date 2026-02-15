@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type {EventWrapper} from "#shared/types/event";
-import type {MediaWrapper} from "#shared/types/media";
+import {MediaStatus, type MediaWrapper} from "#shared/types/media";
 import {useEventDateString} from "~/composables/event";
 import {useEventStore} from "~/stores/event";
 
@@ -29,9 +29,24 @@ const eventThumbnails = computed((): Array<string> => {
   }
 
   return eventMedia.value
+      .filter((media: MediaWrapper) => media.status === MediaStatus.Ready)
       .slice(0, MAX_THUMBNAILS)
       .map((media: MediaWrapper) => media.thumbnailUrl ?? media.url)
       .filter((url): url is string => url != null && url !== "");
+});
+
+const hasProcessingMedia = computed((): boolean => {
+  if (!eventMedia.value || eventMedia.value.length === 0) return false;
+  return eventMedia.value.some(
+    (m) => m.status === MediaStatus.Pending || m.status === MediaStatus.Processing,
+  );
+});
+
+const processingCount = computed((): number => {
+  if (!eventMedia.value) return 0;
+  return eventMedia.value.filter(
+    (m) => m.status === MediaStatus.Pending || m.status === MediaStatus.Processing,
+  ).length;
 });
 </script>
 
@@ -59,6 +74,15 @@ const eventThumbnails = computed((): Array<string> => {
           <img :src="item" class="w-full h-full object-cover" draggable="false" />
         </UCarousel>
       </template>
+      <div v-else-if="hasProcessingMedia" class="w-full h-full relative">
+        <USkeleton class="w-full h-full absolute inset-0" />
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-2">
+          <UIcon name="i-heroicons-arrow-path" class="size-10 text-blue-400 animate-spin" />
+          <span class="text-sm font-medium text-gray-300">
+            Processing {{ processingCount }} {{ processingCount === 1 ? 'item' : 'items' }}...
+          </span>
+        </div>
+      </div>
       <div v-else class="w-full h-full flex items-center justify-center">
         <UIcon name="i-heroicons-photo" class="size-12 text-gray-400" />
       </div>

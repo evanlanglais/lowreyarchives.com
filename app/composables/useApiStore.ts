@@ -1,10 +1,11 @@
 import { defineStore } from "pinia";
-import { createCacheLoader } from "~/utils/cache";
+import { createCacheLoader, type CacheLoader } from "~/utils/cache";
 
 type ApiMethods<Handlers extends Record<string, { fetcher: any }>> = {
-  [P in keyof Handlers]: (
-    ...args: Parameters<Handlers[P]["fetcher"]>
-  ) => Promise<ReturnType<Handlers[P]["fetcher"]>>;
+  [P in keyof Handlers]: CacheLoader<
+    Parameters<Handlers[P]["fetcher"]>,
+    Awaited<ReturnType<Handlers[P]["fetcher"]>>
+  >;
 };
 
 export function defineApiStore<

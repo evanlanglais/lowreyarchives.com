@@ -1,14 +1,22 @@
 type CacheEntry<T> = { data: T; expiresAt: number };
 
+export type CacheLoader<P extends any[], T> = {
+  (...params: P): Promise<T>;
+  /** Remove the cached entry for the given params so the next call refetches. */
+  invalidate: (...params: P) => void;
+  /** Remove all cached entries for this loader. */
+  invalidateAll: () => void;
+};
+
 export function createCacheLoader<P extends any[], T>(
   fetcher: (...params: P) => Promise<T>,
   options?: { ttlMs?: number },
-) {
+): CacheLoader<P, T> {
   const ttlMs = options?.ttlMs ?? 5 * 60 * 1000; // default 5 min
   const cache = new Map<string, CacheEntry<T>>();
   const pending = new Map<string, Promise<T>>();
 
-  return (...params: P): Promise<T> => {
+  const loader = ((...params: P): Promise<T> => {
     const key = JSON.stringify(params);
     const now = Date.now();
 
@@ -38,5 +46,15 @@ export function createCacheLoader<P extends any[], T>(
 
     pending.set(key, promise);
     return promise;
+  }) as CacheLoader<P, T>;
+
+  loader.invalidate = (...params: P) => {
+    cache.delete(JSON.stringify(params));
   };
+
+  loader.invalidateAll = () => {
+    cache.clear();
+  };
+
+  return loader;
 }

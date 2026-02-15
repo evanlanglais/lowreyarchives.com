@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { MediaWrapper, MediaVariant } from "#shared/types/media";
+import { MediaStatus, type MediaWrapper, type MediaVariant } from "#shared/types/media";
 import type { DropdownMenuItem } from "@nuxt/ui";
 
 const props = defineProps<{
@@ -14,6 +14,8 @@ const emit = defineEmits(["previous", "next"]);
 const isVideo = computed((): boolean => {
   return props.media?.isVideo ?? false;
 });
+
+const isReady = computed(() => props.media?.status === MediaStatus.Ready);
 
 const isFirst = computed(() => props.isFirst ?? false);
 const isLast = computed(() => props.isLast ?? false);
@@ -108,21 +110,53 @@ const downloadMenuItems = computed((): DropdownMenuItem[] => {
         </div>
 
         <div class="col-span-2 row-start-1 md:col-span-1 md:col-start-2 md:row-start-1 min-h-0 min-w-0 flex items-center justify-center overflow-hidden">
-          <ModernPlayer
-              v-if="isVideo"
-              :src="media.url"
-              class="max-h-full max-w-full object-contain"
-          />
-          <img
-              v-else
-              :src="media.url"
-              class="max-h-full max-w-full object-contain"
-              :alt="media.description ?? undefined"
-          >
+          <template v-if="isReady">
+            <ModernPlayer
+                v-if="isVideo"
+                :src="media.url"
+                class="max-h-full max-w-full object-contain"
+            />
+            <img
+                v-else
+                :src="media.url"
+                class="max-h-full max-w-full object-contain"
+                :alt="media.description ?? undefined"
+            >
+          </template>
+          <div v-else class="flex flex-col items-center justify-center gap-3 text-center p-8">
+            <UIcon
+                :name="media.status === MediaStatus.Failed ? 'i-heroicons-exclamation-triangle' : media.isVideo ? 'i-heroicons-video-camera' : 'i-heroicons-photo'"
+                :class="[
+                  'size-16',
+                  media.status === MediaStatus.Failed ? 'text-red-400' : 'text-gray-400 dark:text-gray-500',
+                ]"
+            />
+            <div class="flex items-center gap-2">
+              <UIcon
+                  v-if="media.status === MediaStatus.Pending"
+                  name="i-heroicons-clock"
+                  class="size-5 text-yellow-400"
+              />
+              <UIcon
+                  v-else-if="media.status === MediaStatus.Processing"
+                  name="i-heroicons-arrow-path"
+                  class="size-5 text-blue-400 animate-spin"
+              />
+              <UIcon
+                  v-else-if="media.status === MediaStatus.Failed"
+                  name="i-heroicons-x-circle"
+                  class="size-5 text-red-400"
+              />
+              <span class="text-sm font-medium text-gray-300">
+                {{ media.status === MediaStatus.Pending ? 'Waiting to be processed...' : media.status === MediaStatus.Processing ? 'Processing media...' : 'Processing failed' }}
+              </span>
+            </div>
+            <p v-if="media.description" class="text-xs text-gray-500 max-w-sm">{{ media.description }}</p>
+          </div>
         </div>
 
         <!-- Download button - centered in bottom row on mobile -->
-        <div v-if="hasDownloads" class="col-span-2 row-start-3 md:col-span-1 md:col-start-2 md:row-start-2 flex items-center justify-center">
+        <div v-if="hasDownloads && isReady" class="col-span-2 row-start-3 md:col-span-1 md:col-start-2 md:row-start-2 flex items-center justify-center">
           <UDropdownMenu :items="downloadMenuItems">
             <UButton
                 icon="i-heroicons-arrow-down-tray"

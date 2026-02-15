@@ -29,6 +29,8 @@ export default defineNuxtConfig({
         cloudflareStreamCode: "",
         cloudflareStreamKeyId: "",
         cloudflareStreamKeyJwt: "",
+        // Cache purge API token (used by media processor and internal invalidation)
+        multiCacheApiToken: "",
     },
     supabase: {
         clientOptions: {
@@ -89,6 +91,12 @@ export default defineNuxtConfig({
     multiCache: {
         data: {
             enabled: true,
+        },
+        api: {
+            enabled: true,
+            prefix: "/__nuxt_multi_cache",
+            authorization: process.env.NUXT_MULTI_CACHE_API_TOKEN || false,
+            cacheTagInvalidationDelay: 0,
         },
     },
 });

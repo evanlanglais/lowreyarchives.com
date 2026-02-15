@@ -547,7 +547,9 @@ async function handleConfirmUpload() {
       await uploaderRef.value.startBulkUpload();
 
       // Navigate to the event page after successful upload
+      // Delay to allow server-side cache invalidation to complete
       if (uploaderRef.value?.uploaderState === 4) { // COMPLETED
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         router.push(`/archive/events/${targetEventId.value}`);
       }
     }

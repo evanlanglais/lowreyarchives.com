@@ -49,7 +49,8 @@ export default defineEventHandler(async (event): Promise<EventWrapper> => {
     });
   }
 
-  await addToCache(data, [], 3600);
+  // Tag with event ID for tag-based cache invalidation
+  await addToCache(data, [`event:${id}`], 3600);
 
   return data;
 });

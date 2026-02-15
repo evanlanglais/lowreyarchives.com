@@ -1,5 +1,5 @@
 import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
-import { useEventMediaCacheKey } from "#shared/utils/cacheKeys";
+import { invalidateEventMediaCache } from "~~/server/utils/cache-invalidation";
 
 const runtimeConfig = useRuntimeConfig();
 
@@ -82,17 +82,7 @@ export default defineEventHandler(async (event): Promise<FinishMultipartUploadRe
       }
 
       // Invalidate the event media cache so the new media appears immediately
-      const cacheKey = useEventMediaCacheKey(eventId.toString());
-      try {
-        // Access nuxt-multi-cache storage from event context
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const multiCache = (event.context as any)?.multiCache?.data;
-        if (multiCache?.storage) {
-          await multiCache.storage.removeItem(cacheKey);
-        }
-      } catch (e) {
-        console.warn("Failed to invalidate cache:", e);
-      }
+      await invalidateEventMediaCache(eventId);
 
       return { mediaId: mediaRecord.id, success: true };
     }

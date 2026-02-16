@@ -260,11 +260,16 @@ function setUploaderState(state: UPLOADER_STATE) {
   uploaderState.value = state;
 }
 
+function addFiles(files: File[]) {
+  onMediaSelectedForUpload(files);
+}
+
 defineExpose({
   startBulkUpload,
   mediaUploadStateMap,
   uploaderState,
-  setUploaderState
+  setUploaderState,
+  addFiles,
 });
 </script>
 

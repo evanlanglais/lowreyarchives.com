@@ -217,16 +217,7 @@
                 Media Queue
               </h3>
             </template>
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-2xl font-bold">{{ queuedFilesDescription }}</p>
-                <p class="text-sm text-gray-500">Files to upload</p>
-              </div>
-              <div class="text-right">
-                <p class="text-lg font-mono">{{ formatBytes(queuedTotalSize) }}</p>
-                <p class="text-sm text-gray-500">Total size</p>
-              </div>
-            </div>
+            <UploadQueueSummary :uploader-ref="uploaderRef" />
             <div class="mt-4">
               <UButton
                 variant="link"
@@ -295,6 +286,7 @@ import type { UserProfile, GroupWithMembers } from '#shared/types/user';
 import type { GroupWrapper } from '#shared/types/group';
 import { debounce } from "es-toolkit";
 import { useUserStore } from "~/stores/user";
+import { formatBytes } from "#shared/utils/utils";
 
 const route = useRoute();
 const router = useRouter();
@@ -434,36 +426,6 @@ const queuedFilesCount = computed(() => {
   return uploaderRef.value.mediaUploadStateMap.size;
 });
 
-const queuedVideosCount = computed(() => {
-  if (!uploaderRef.value?.mediaUploadStateMap) return 0;
-  let total = 0;
-  for (const [_, state] of uploaderRef.value.mediaUploadStateMap) {
-    if (state.file.type.startsWith('video/')) total++;
-  }
-  return total;
-});
-
-const queuedImagesCount = computed(() => {
-  if (!uploaderRef.value?.mediaUploadStateMap) return 0;
-  return queuedFilesCount.value - queuedVideosCount.value;
-});
-
-const queuedFilesDescription = computed(() => {
-  let returnString = '';
-  returnString += `${queuedVideosCount.value} Video${queuedVideosCount.value != 1 ? 's' : ''}, `;
-  returnString += `${queuedImagesCount.value} Image${queuedImagesCount.value != 1 ? 's' : ''}`;
-  return returnString;
-})
-
-const queuedTotalSize = computed(() => {
-  if (!uploaderRef.value?.mediaUploadStateMap) return 0;
-  let total = 0;
-  for (const [_, state] of uploaderRef.value.mediaUploadStateMap) {
-    total += state.file.size;
-  }
-  return total;
-});
-
 // Methods
 function selectEvent(event: EventWrapper | null) {
   selectedEvent.value = event;
@@ -601,15 +563,6 @@ async function handleConfirmUpload() {
   } finally {
     isUploading.value = false;
   }
-}
-
-function formatBytes(bytes: number, decimals = 2) {
-  if (!+bytes) return '0 Bytes';
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
 
 onMounted(async () => {

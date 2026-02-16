@@ -19,7 +19,19 @@
           !!eventInfo && !!eventInfo.description ? eventInfo.description : ''
         "
         :headline="headline"
-      />
+      >
+        <template #links>
+          <div class="flex items-center gap-2">
+            <UButton
+              label="Add Media"
+              icon="i-heroicons-arrow-up-tray"
+              color="neutral"
+              variant="outline"
+              @click="addMediaModalRef?.open()"
+            />
+          </div>
+        </template>
+      </UPageHeader>
       <UPageBody>
         <!-- MediaTheater pinned at top -->
         <div class="shrink-0" :style="`height: ${theaterHeight}%`">
@@ -32,29 +44,17 @@
           />
         </div>
 
-        <!-- Filter and Grid below -->
+        <!-- Media info bar -->
+        <MediaInfoBar :media="currentMedia" />
+
+        <!-- Grid below -->
         <div
           ref="gridWrapper"
           class="flex-1 overflow-auto p-4"
           @scroll.passive="onScroll"
         >
-          <div class="flex items-center justify-between mb-4 gap-4">
-            <UInput
-              v-model="filterText"
-              placeholder="Filter media..."
-              clearable
-              class="w-full max-w-sm"
-            />
-            <UButton
-                label="Add Photos/Videos"
-                icon="i-heroicons-arrow-up-tray"
-                color="neutral"
-                variant="outline"
-                :to="`/upload/${eventId}`"
-            />
-          </div>
           <MediaGrid
-            :media-list="filteredMedia"
+            :media-list="mediaItems"
             :selected-index="currentIndex"
             @select="setMediaByIndex"
           />
@@ -63,13 +63,20 @@
         </div>
       </UPageBody>
     </UPage>
+
+    <AddMediaModal
+      ref="addMediaModalRef"
+      :event-id="Number(eventId)"
+      @uploaded="onMediaUploaded"
+    />
   </UContainer>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import MediaTheater from "~/components/MediaTheater.vue";
 import MediaGrid from "~/components/MediaGrid.vue";
+import AddMediaModal from "~/components/AddMediaModal.vue";
 import type { MediaWrapper } from "~/types";
 import { useEventStore } from "~/stores/event";
 import { useRouter } from "vue-router";
@@ -83,32 +90,24 @@ const isMediaLoading = ref(false);
 const hasMore = ref(true);
 const eventStore = useEventStore();
 
+const addMediaModalRef = ref<InstanceType<typeof AddMediaModal> | null>(null);
+
 useHead({
   title: computed(() => `${(eventInfo.value ? eventInfo.value.title : '')} | Lowrey Archives`),
 });
 
 // Input props/data could come from store or fetch
 const mediaItems = ref<MediaWrapper[]>(new Array<MediaWrapper>());
-const filterText = ref("");
 const theaterHeight = 40; // percentage
-
-
-const filteredMedia = computed(() => {
-  // if (!filterText.value) return mediaItems.value
-  // return mediaItems.value.filter(m =>
-  //     m.title.toLowerCase().includes(filterText.value.toLowerCase())
-  // )
-  return mediaItems.value;
-});
 
 const currentIndex = ref(0);
 const currentMedia = computed(
-  () => filteredMedia.value[currentIndex.value] || null,
+  () => mediaItems.value[currentIndex.value] || null,
 );
 
 const isFirst = computed(() => currentIndex.value === 0);
 const isLast = computed(
-  () => currentIndex.value === filteredMedia.value.length - 1,
+  () => currentIndex.value === mediaItems.value.length - 1,
 );
 
 const headline = computed(() => {
@@ -124,7 +123,7 @@ function goBack() {
 }
 
 function setMediaByIndex(idx: number) {
-  if (idx >= 0 && idx < filteredMedia.value.length) {
+  if (idx >= 0 && idx < mediaItems.value.length) {
     currentIndex.value = idx;
   }
 }
@@ -133,7 +132,7 @@ function prevMedia() {
   if (currentIndex.value > 0) currentIndex.value--;
 }
 function nextMedia() {
-  if (currentIndex.value < filteredMedia.value.length - 1) currentIndex.value++;
+  if (currentIndex.value < mediaItems.value.length - 1) currentIndex.value++;
 }
 
 // Keyboard navigation
@@ -156,13 +155,7 @@ async function loadMore() {
   if (isMediaLoading.value || !hasMore.value) return;
   isMediaLoading.value = true;
 
-  const newItems = await eventStore.getEventMedia(eventId); // however you page your API
-  // if (newItems.length === 0) {
-  //   hasMore.value = false
-  //   observer.disconnect()                  // optional cleanup: stop observing
-  // } else {
-  //   mediaItems.value.push(...newItems)
-  // }
+  const newItems = await eventStore.getEventMedia(eventId);
 
   hasMore.value = false;
   observer.disconnect();
@@ -178,6 +171,16 @@ async function onScroll() {
   if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
     await loadMore();
   }
+}
+
+async function onMediaUploaded() {
+  // Reload media after upload
+  mediaItems.value = [];
+  hasMore.value = true;
+  isMediaLoading.value = false;
+
+  const newItems = await eventStore.getEventMedia(eventId);
+  mediaItems.value = newItems;
 }
 
 onMounted(async () => {

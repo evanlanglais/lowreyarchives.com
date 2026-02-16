@@ -4,7 +4,8 @@
         v-for="(media, idx) in mediaList"
         :key="media.id"
         :variant="idx === selectedIndex ? 'soft' : 'ghost'"
-        class="cursor-pointer relative aspect-video overflow-hidden"
+        class="cursor-pointer relative overflow-hidden"
+        :ui="{ container: 'p-0 sm:p-0 aspect-video' }"
         @click="() => select(idx)"
     >
       <!-- Ready media: show actual thumbnail -->

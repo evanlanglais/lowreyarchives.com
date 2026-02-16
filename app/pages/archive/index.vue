@@ -16,6 +16,14 @@
                   placeholder="Search..."
                   class="w-full sm:w-64"
                />
+               <UButton
+                 :icon="sortOrder === 'desc' ? 'i-heroicons-bars-arrow-down' : 'i-heroicons-bars-arrow-up'"
+                 variant="ghost"
+                 color="neutral"
+                 @click="toggleSortOrder"
+               >
+                 {{ sortOrder === 'desc' ? 'Newest' : 'Oldest' }}
+               </UButton>
                <span class="text-sm text-gray-500 hidden sm:inline">Items per page:</span>
                <USelect
                  v-model="pageSize"
@@ -132,6 +140,7 @@ const hasMore = ref(true);
 const page = ref(1);
 const pageSize = ref(20);
 const searchQuery = ref("");
+const sortOrder = ref<"asc" | "desc">("asc");
 
 // Person filter state
 const selectedPersonFilter = ref<PersonFilterOption | undefined>(undefined);
@@ -176,6 +185,11 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
+function toggleSortOrder() {
+  sortOrder.value = sortOrder.value === "desc" ? "asc" : "desc";
+  resetAndLoad();
+}
+
 function onPersonFilterChange() {
   resetAndLoad();
 }
@@ -194,7 +208,10 @@ const loadEvents = async () => {
 
   loading.value = true;
   try {
-    const filters: Record<string, any> = { search: searchQuery.value };
+    const filters: Record<string, any> = {
+      search: searchQuery.value,
+      sortOrder: sortOrder.value,
+    };
 
     if (selectedPersonFilter.value) {
       filters.taggedUserId = selectedPersonFilter.value.value;

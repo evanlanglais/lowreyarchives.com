@@ -137,8 +137,10 @@ export default defineEventHandler(async (event): Promise<EventWrapper[]> => {
     queryBuilder = queryBuilder.or(`title.ilike.%${s}%,description.ilike.%${s}%`);
   }
 
+  const ascending = filters.sortOrder === "asc";
+
   const { data: events, error: eventsError } = await queryBuilder
-    .order("start_date", { ascending: true })
+    .order("start_date", { ascending })
     .range(offset, offset + pageSize - 1)
     .overrideTypes<Array<Tables<"events">>>();
 

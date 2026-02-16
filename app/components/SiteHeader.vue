@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const user = useSupabaseUser();
+const archiveUploadModalRef = ref<InstanceType<typeof ArchiveUploadModal> | null>(null);
 </script>
 
 <template>
@@ -13,9 +14,9 @@ const user = useSupabaseUser();
     <template #right>
       <UButton
         v-if="!!user"
-        to="/upload"
         icon="i-heroicons-plus"
         color="primary"
+        @click="archiveUploadModalRef?.open()"
       >
         <span class="hidden sm:inline">Add to archive</span>
       </UButton>
@@ -27,4 +28,6 @@ const user = useSupabaseUser();
       </UButton>
     </template>
   </UHeader>
+
+  <ArchiveUploadModal ref="archiveUploadModalRef" />
 </template>

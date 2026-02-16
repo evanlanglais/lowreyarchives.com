@@ -114,7 +114,7 @@ const downloadMenuItems = computed((): DropdownMenuItem[] => {
     </span>
 
     <div v-if="hasDownloads" class="ml-auto">
-      <UDropdownMenu :items="downloadMenuItems">
+      <UDropdownMenu v-if="downloadableVariants.length > 1" :items="downloadMenuItems">
         <UButton
           icon="i-heroicons-arrow-down-tray"
           variant="soft"
@@ -125,6 +125,17 @@ const downloadMenuItems = computed((): DropdownMenuItem[] => {
           Download
         </UButton>
       </UDropdownMenu>
+      <UButton
+        v-else
+        icon="i-heroicons-arrow-down-tray"
+        variant="soft"
+        color="neutral"
+        size="sm"
+        :loading="isDownloading"
+        @click="downloadVariant(downloadableVariants[0])"
+      >
+        Download
+      </UButton>
     </div>
   </div>
 </template>

@@ -264,12 +264,18 @@ function addFiles(files: File[]) {
   onMediaSelectedForUpload(files);
 }
 
+function reset() {
+  mediaUploadStateMap.value = new Map<string, MediaUploadState>();
+  uploaderState.value = UPLOADER_STATE.INITIAL;
+}
+
 defineExpose({
   startBulkUpload,
   mediaUploadStateMap,
   uploaderState,
   setUploaderState,
   addFiles,
+  reset,
 });
 </script>
 

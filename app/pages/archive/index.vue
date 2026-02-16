@@ -1,50 +1,34 @@
 <template>
   <UContainer>
     <UPage>
-      <UPageHeader
-        headline="Archives"
-        title="View the archives"
-        description="Sift through memories of years past added by family"
-      />
       <UPageBody>
-        <div class="flex flex-col gap-4 mb-4">
-          <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-             <div class="flex items-center gap-2 w-full sm:w-auto">
-               <UInput
-                  v-model="searchQuery"
-                  icon="i-heroicons-magnifying-glass"
-                  placeholder="Search..."
-                  class="w-full sm:w-64"
-               />
-               <UButton
-                 :icon="sortOrder === 'desc' ? 'i-heroicons-bars-arrow-down' : 'i-heroicons-bars-arrow-up'"
-                 variant="ghost"
-                 color="neutral"
-                 @click="toggleSortOrder"
-               >
-                 {{ sortOrder === 'desc' ? 'Newest' : 'Oldest' }}
-               </UButton>
-               <span class="text-sm text-gray-500 hidden sm:inline">Items per page:</span>
-               <USelect
-                 v-model="pageSize"
-                 :items="[20, 50, 100]"
-                 z-100
-                 @change="resetAndLoad"
-               />
-             </div>
-          </div>
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4">
+          <!-- Left: Search -->
+          <UInput
+            v-model="searchQuery"
+            icon="i-heroicons-magnifying-glass"
+            placeholder="Search..."
+            class="w-full sm:w-64"
+          />
 
-          <!-- Filter by person -->
+          <!-- Right: Sort + Person filter + Add -->
           <div class="flex items-center gap-2">
-            <UIcon name="i-heroicons-funnel" class="text-gray-400" />
-            <span class="text-sm text-gray-500">Filter by person:</span>
+            <UButton
+              :icon="sortOrder === 'desc' ? 'i-heroicons-bars-arrow-down' : 'i-heroicons-bars-arrow-up'"
+              variant="ghost"
+              color="neutral"
+              @click="toggleSortOrder"
+            >
+              {{ sortOrder === 'desc' ? 'Newest' : 'Oldest' }}
+            </UButton>
             <USelectMenu
               v-model="selectedPersonFilter"
               :items="personFilterOptions"
-              placeholder="All events"
+              placeholder="Everyone"
+              icon="i-heroicons-funnel"
               searchable
               clearable
-              class="w-64"
+              class="w-44"
               @update:model-value="onPersonFilterChange"
             >
               <template #item="{ item }">
@@ -122,10 +106,8 @@
 </template>
 
 <script setup lang="ts">
-import { DateTime } from "luxon";
-import type { GroupWrapper } from "#shared/types/group";
 import type { EventWrapper } from "#shared/types/event";
-import type { UserProfile, GroupWithMembers } from "#shared/types/user";
+import type { GroupWithMembers } from "#shared/types/user";
 import { debounce } from "es-toolkit";
 
 useHead({

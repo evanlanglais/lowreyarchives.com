@@ -54,8 +54,9 @@ const processingCount = computed((): number => {
   <UPageCard
       :title="props.event.title"
       :description="props.event.description"
+      :ui="{ container: 'p-0 sm:p-0', wrapper: 'p-4 sm:p-6' }"
       reverse>
-    <div class="relative w-full aspect-4/3 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+    <div class="relative w-full aspect-4/3 overflow-hidden bg-gray-100 dark:bg-gray-800">
       <USkeleton
           v-if="loading"
           class="w-full h-full"
@@ -68,8 +69,8 @@ const processingCount = computed((): number => {
             loop
             dots
             :items="eventThumbnails"
-            class="rounded-lg overflow-hidden h-full"
-            :ui="{ item: 'basis-full' }"
+            class="overflow-hidden h-full"
+            :ui="{ viewport: 'h-full', container: 'h-full ms-0 items-stretch', item: 'ps-0 basis-full' }"
         >
           <img :src="item" class="w-full h-full object-cover" draggable="false" />
         </UCarousel>

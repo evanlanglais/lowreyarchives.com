@@ -87,13 +87,15 @@ export async function mediaWrapperFromDatabaseMediaRow(
 
   // Extract primary URLs from variants
   const optimizedVariant = variants.find((v) => v.variantType === "optimized");
+  const originalVariant = variants.find((v) => v.variantType === "original");
   const thumbnailVariant = variants.find((v) => v.variantType === "thumbnail");
 
   // Determine media type internally (not exposed to frontend)
   const mediaType = mediaTypeFromDatabaseMediaType(mediaRow.media_type);
 
   // Initialize the media wrapper with common fields
-  let url = optimizedVariant?.url ?? "";
+  // Prefer optimized, fall back to original variant, then legacy media_url
+  let url = optimizedVariant?.url ?? originalVariant?.url ?? "";
   let thumbnailUrl = thumbnailVariant?.url ?? null;
 
   // Handle different media types - some need special URL handling

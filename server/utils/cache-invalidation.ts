@@ -2,6 +2,7 @@ import { useNitroApp } from "nitropack/runtime";
 import {
   useEventMediaCacheKey,
   useEventInfoCacheKey,
+  useEventDetailsCacheKey,
   useEventThumbnailsCacheKey,
   useGroupEventsCacheKey,
 } from "#shared/utils/cacheKeys";
@@ -14,7 +15,7 @@ function getDataStorage() {
 /**
  * Immediately remove specific cache keys from the data cache storage.
  */
-async function removeKeys(keys: string[]): Promise<void> {
+export async function removeKeys(keys: string[]): Promise<void> {
   const storage = getDataStorage();
   if (!storage) {
     console.warn("Data cache storage not available");
@@ -51,6 +52,7 @@ export async function invalidateEventCaches(
   const id = String(eventId);
   const keys = [
     useEventInfoCacheKey(id),
+    useEventDetailsCacheKey(id),
     useEventMediaCacheKey(id),
     useEventThumbnailsCacheKey(id),
   ];

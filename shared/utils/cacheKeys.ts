@@ -22,6 +22,10 @@ export const useMediaUrlCacheKey = (mediaId: string): string => {
   return `media-${mediaId}-url`;
 };
 
+export const useEventDetailsCacheKey = (eventId: string): string => {
+  return `event-${eventId}-details`;
+};
+
 export const useUserGroupsCacheKey = (userId: string): string => {
   return `user-${userId}-groups`;
 };

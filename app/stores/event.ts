@@ -9,6 +9,9 @@ export const useEventStore = defineApiStore(
     getEventMedia: {
       fetcher: (eventId: number) => $fetch(`/api/events/${eventId}/media`),
     },
+    getEventDetails: {
+      fetcher: (eventId: number) => $fetch(`/api/events/${eventId}/details`),
+    },
   },
   {},
 );

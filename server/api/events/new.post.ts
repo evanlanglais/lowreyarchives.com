@@ -1,6 +1,6 @@
-
 import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
 import type { EventWrapper } from "#shared/types/event";
+import { invalidateNewEventCaches } from "~~/server/utils/cache-invalidation";
 
 type CreateEventRequest = {
     title: string;
@@ -38,9 +38,9 @@ export default defineEventHandler(async (event): Promise<EventWrapper> => {
         .from("events")
         .insert({
             title: body.title,
-            description: body.description || null,
+            description: body.description || "",
             start_date: body.startDate,
-            end_date: body.endDate || null,
+            end_date: body.endDate || body.startDate,
             created_by: user.sub,
         })
         .select(
@@ -63,7 +63,7 @@ export default defineEventHandler(async (event): Promise<EventWrapper> => {
     const { error: creatorLinkError } = await client
         .from("user-events")
         .insert({
-            user_id: user.id as string,
+            user_id: user.sub,
             event_id: newEvent.id,
             relationship_type: "creator",
         });
@@ -122,6 +122,9 @@ export default defineEventHandler(async (event): Promise<EventWrapper> => {
             console.error("Failed to share event with users:", sharedUserError);
         }
     }
+
+    // Invalidate cached event lists so the new event appears immediately
+    await invalidateNewEventCaches(user.sub, body.shareWithGroups);
 
     return newEvent;
 });

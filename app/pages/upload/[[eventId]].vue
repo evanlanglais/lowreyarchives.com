@@ -2,8 +2,8 @@
   <UContainer>
     <UPage>
       <UPageHeader
-        title="Upload Media"
-        description="Archive photos and videos to a Memory."
+        :title="pageTitle"
+        :description="pageDescription"
       />
 
       <UPageBody>
@@ -310,7 +310,7 @@ const isUploading = ref(false);
 const targetEventId = ref<number | undefined>(undefined);
 
 // Step 1 State
-const eventSelectionMode = ref<'existing' | 'new'>('existing');
+const eventSelectionMode = ref<'existing' | 'new'>('new');
 const eventSearchQuery = ref('');
 const selectedEvent = ref<EventWrapper | null>(null);
     
@@ -341,6 +341,45 @@ const taggedUsers = ref<UserProfile[]>([]);
 const sharedWithUsers = ref<UserProfile[]>([]);
 const loadingGroups = ref(false);
 
+// Dynamic page header
+const totalFiles = computed(() => uploaderRef.value?.mediaUploadStateMap?.size ?? 0);
+const completedFiles = computed(() => {
+  if (!uploaderRef.value?.mediaUploadStateMap) return 0;
+  let count = 0;
+  uploaderRef.value.mediaUploadStateMap.forEach((entry) => {
+    if (entry.state === 4) count++; // MEDIA_UPLOAD_STATE.COMPLETED
+  });
+  return count;
+});
+
+const eventName = computed(() => {
+  if (eventSelectionMode.value === 'existing') {
+    return selectedEvent.value?.title ?? null;
+  }
+  return newEventData.title || null;
+});
+
+const pageTitle = computed(() => {
+  if (isUploading.value && totalFiles.value > 0) {
+    return `Uploading ${completedFiles.value} / ${totalFiles.value}`;
+  }
+  if (eventName.value) {
+    return `Upload to "${eventName.value}"`;
+  }
+  return "Upload Media";
+});
+
+const pageDescription = computed(() => {
+  if (isUploading.value && totalFiles.value > 0) {
+    return `Uploading media${eventName.value ? ` to "${eventName.value}"` : ''}...`;
+  }
+  return "Archive photos and videos to a Memory.";
+});
+
+useHead({
+  title: computed(() => `${pageTitle.value} | Lowrey Archives`),
+});
+
 // All unique users from all groups for suggestions
 const allGroupMembers = computed(() => {
   const uniqueUsers = new Map<string, UserProfile>();
@@ -364,15 +403,15 @@ const groupSelectItems = computed(() => {
 
 const eventSelectionTabs = [
   {
+    label: 'Create New Event',
+    icon: 'i-heroicons-plus-circle',
+    value: 'new',
+  },
+  {
     label: 'Select Existing Event',
     icon: 'i-heroicons-calendar',
     value: 'existing',
   },
-  {
-    label: 'Create New Event',
-    icon: 'i-heroicons-plus-circle',
-    value: 'new',
-  }
 ]
 
 // Computeds

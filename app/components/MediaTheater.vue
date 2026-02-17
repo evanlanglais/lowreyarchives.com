@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
+import { useSwipe } from "@vueuse/core";
 import { MediaStatus, type MediaWrapper } from "#shared/types/media";
 
 const props = defineProps<{
@@ -18,6 +19,29 @@ const isReady = computed(() => props.media?.status === MediaStatus.Ready);
 
 const isFirst = computed(() => props.isFirst ?? false);
 const isLast = computed(() => props.isLast ?? false);
+
+// Swipe navigation (photos only)
+const contentArea = ref<HTMLElement | null>(null);
+
+const { isSwiping, direction } = useSwipe(contentArea, {
+  passive: true,
+  onSwipeEnd() {
+    if (isVideo.value) return;
+    if (direction.value === "left" && !isLast.value) {
+      emit("next");
+    } else if (direction.value === "right" && !isFirst.value) {
+      emit("previous");
+    }
+  },
+});
+
+// Fullscreen photo overlay
+const fullscreenOpen = ref(false);
+
+function onImageClick() {
+  if (isSwiping.value) return;
+  fullscreenOpen.value = true;
+}
 </script>
 
 <template>
@@ -36,7 +60,7 @@ const isLast = computed(() => props.isLast ?? false);
           />
         </div>
 
-        <div class="min-h-0 min-w-0 flex items-center justify-center overflow-hidden">
+        <div ref="contentArea" class="min-h-0 min-w-0 flex items-center justify-center overflow-hidden">
           <template v-if="isReady">
             <ModernPlayer
                 v-if="isVideo"
@@ -46,8 +70,9 @@ const isLast = computed(() => props.isLast ?? false);
             <img
                 v-else
                 :src="media.url"
-                class="max-h-full max-w-full object-contain"
+                class="max-h-full max-w-full object-contain cursor-zoom-in"
                 :alt="media.description ?? undefined"
+                @click="onImageClick"
             >
           </template>
           <div v-else class="flex flex-col items-center justify-center gap-3 text-center p-8">
@@ -104,6 +129,17 @@ const isLast = computed(() => props.isLast ?? false);
           description="Select media below to view on the big screen!"
       />
     </div>
+
+    <PhotoFullscreen
+        v-if="fullscreenOpen && media && !isVideo && isReady"
+        :src="media.url"
+        :alt="media.description ?? undefined"
+        :is-first="isFirst"
+        :is-last="isLast"
+        @close="fullscreenOpen = false"
+        @previous="$emit('previous')"
+        @next="$emit('next')"
+    />
   </div>
 </template>
 

@@ -1,11 +1,14 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__nuxt-ui-remote__get-component",
+      "mcp__nuxt-ui-remote__get-component-metadata",
+      "Bash(yarn lint:*)",
+      "mcp__nuxt-ui-remote__search-components-by-category"
+    ]
+  },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "supabase"
-  ],
-  "permissions": {
-    "allow": [
-      "mcp__nuxt-ui-remote__get-component"
-    ]
-  }
+  ]
 }

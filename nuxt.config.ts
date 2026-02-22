@@ -17,7 +17,7 @@ export default defineNuxtConfig({
     runtimeConfig: {
         public: {
             baseUrl: "https://lowreyarchives.com",
-            uploadChunkSize: 50 * 1024 * 1024, // 50MB for S3 multipart uploads
+            uploadChunkSize: 20 * 1024 * 1024, // 20MB for S3 multipart uploads
         },
         s3Url: "https://garage-media-s3.lowreyarchives.com",
         s3Key: "",

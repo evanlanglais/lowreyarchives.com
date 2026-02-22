@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { generateGUID, runWithConcurrencyLimit } from "#shared/utils/utils";
+import { generateGUID, runWithConcurrencyLimit, sleep } from "#shared/utils/utils";
+
+const MAX_CHUNK_RETRIES = 5;
+const MAX_API_RETRIES = 3;
+const BASE_RETRY_DELAY_MS = 2000;
 
 enum UPLOADER_STATE {
   INITIAL,
@@ -54,9 +58,90 @@ watch(selectedFiles, (newFiles) => {
   }
 });
 
+async function uploadMediaSimple(key: string, file: File): Promise<boolean> {
+  const fileType = file.type;
+  const fileName = file.name;
+
+  updateMediaUploadProgress(key, 0);
+
+  try {
+    // Get presigned PUT URL (with retries)
+    let uploadUrlResponse;
+    for (let attempt = 0; attempt < MAX_API_RETRIES; attempt++) {
+      try {
+        console.log(`${key} getting simple upload URL (attempt ${attempt})`);
+        uploadUrlResponse = await $fetch("/api/get-upload-url", {
+          method: "post",
+          body: { fileName, fileType },
+        });
+        break;
+      } catch (error) {
+        console.error(`${key} get-upload-url failed on attempt ${attempt}:`, error);
+        if (attempt === MAX_API_RETRIES - 1) throw error;
+        await sleep(BASE_RETRY_DELAY_MS * Math.pow(2, attempt));
+      }
+    }
+
+    // PUT file directly to presigned URL (with retries)
+    for (let attempt = 0; attempt < MAX_CHUNK_RETRIES; attempt++) {
+      try {
+        console.log(`${key} uploading file via simple PUT (attempt ${attempt})`);
+        await $fetch(uploadUrlResponse!.presignedUrl, {
+          method: "put",
+          headers: { "Content-Type": fileType },
+          body: file,
+          timeout: 120 * 1000,
+        });
+        break;
+      } catch (error) {
+        console.error(`${key} simple PUT failed on attempt ${attempt}:`, error);
+        if (attempt === MAX_CHUNK_RETRIES - 1) throw error;
+        await sleep(BASE_RETRY_DELAY_MS * Math.pow(2, attempt));
+      }
+    }
+
+    updateMediaUploadProgress(key, 100);
+
+    // Register the upload in the database (with retries)
+    const mediaType = file.type.startsWith("video/") ? "video" : "photo";
+    for (let attempt = 0; attempt < MAX_API_RETRIES; attempt++) {
+      try {
+        await $fetch("/api/register-upload", {
+          method: "post",
+          body: {
+            key: uploadUrlResponse!.key,
+            eventId: props.eventId,
+            mediaType,
+          },
+        });
+        break;
+      } catch (error) {
+        console.error(`${key} register-upload failed on attempt ${attempt}:`, error);
+        if (attempt === MAX_API_RETRIES - 1) throw error;
+        await sleep(BASE_RETRY_DELAY_MS * Math.pow(2, attempt));
+      }
+    }
+
+    console.log(`${key} simple upload finished`);
+    completeMediaUpload(key);
+    return true;
+  } catch (error) {
+    failMediaUpload(key, "Failed to upload file");
+    console.error(error);
+  }
+
+  return false;
+}
+
 async function uploadMedia(key: string, file: File): Promise<boolean> {
   const runtimeConfig = useRuntimeConfig();
   const chunkSize = runtimeConfig.public.uploadChunkSize;
+
+  // Use simple upload for files smaller than the chunk size
+  if (file.size < chunkSize) {
+    return uploadMediaSimple(key, file);
+  }
+
   const fileType = file.type;
   const fileName = file.name;
   const fileSize = file.size;
@@ -67,18 +152,29 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
   let uploadId: string | null = null;
 
   try {
-    console.log(`${key} starting multipartupload request`);
-    const startUploadResponse = await $fetch("/api/start-multipart-upload", {
-      method: "post",
-      body: {
-        fileName,
-        fileType,
-      },
-    });
-    console.log(`${key} got mjultipartuploadrequest`);
+    // Start multipart upload (with retries for transient S3 errors)
+    let startUploadResponse;
+    for (let attempt = 0; attempt < MAX_API_RETRIES; attempt++) {
+      try {
+        console.log(`${key} starting multipart upload request (attempt ${attempt})`);
+        startUploadResponse = await $fetch("/api/start-multipart-upload", {
+          method: "post",
+          body: {
+            fileName,
+            fileType,
+          },
+        });
+        break;
+      } catch (error) {
+        console.error(`${key} start-multipart-upload failed on attempt ${attempt}:`, error);
+        if (attempt === MAX_API_RETRIES - 1) throw error;
+        await sleep(BASE_RETRY_DELAY_MS * Math.pow(2, attempt));
+      }
+    }
+    console.log(`${key} got multipart upload response`);
 
-    uploadKey = startUploadResponse.key;
-    uploadId = startUploadResponse.uploadId;
+    uploadKey = startUploadResponse!.key;
+    uploadId = startUploadResponse!.uploadId;
 
     const chunks = Math.ceil(fileSize / chunkSize);
     const uploadedParts = [];
@@ -86,10 +182,10 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
     for (let i = 0; i < chunks; i++) {
       const chunk = file.slice(i * chunkSize, (i + 1) * chunkSize);
       let successful = false;
-      for (let j = 0; j < 5; j++) {
+      for (let j = 0; j < MAX_CHUNK_RETRIES; j++) {
         try {
           console.log(
-              `${key} starting to get chunk ${i} of ${chunks} upload url`,
+              `${key} starting to get chunk ${i} of ${chunks} upload url (attempt ${j})`,
           );
           const response = await $fetch("/api/get-chunk-upload-url", {
             method: "post",
@@ -121,12 +217,15 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
           successful = true;
           break;
         } catch (error) {
-          console.log(`${key} Chunk ${i} failed on attempt ${j}`);
+          console.error(`${key} Chunk ${i} failed on attempt ${j}:`, error);
+          if (j < MAX_CHUNK_RETRIES - 1) {
+            await sleep(BASE_RETRY_DELAY_MS * Math.pow(2, j));
+          }
         }
       }
 
       if (!successful) {
-        throw createError(`Unable to upload chunk ${i}`);
+        throw createError(`Unable to upload chunk ${i} after ${MAX_CHUNK_RETRIES} attempts`);
       }
     }
 
@@ -135,16 +234,26 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
     // Determine media type based on file MIME type
     const mediaType = file.type.startsWith("video/") ? "video" : "photo";
 
-    await $fetch("/api/finish-multipart-upload", {
-      method: "post",
-      body: {
-        key: startUploadResponse.key,
-        uploadId: startUploadResponse.uploadId,
-        parts: uploadedParts,
-        eventId: props.eventId,
-        mediaType,
-      },
-    });
+    // Finish multipart upload (with retries for transient S3 errors)
+    for (let attempt = 0; attempt < MAX_API_RETRIES; attempt++) {
+      try {
+        await $fetch("/api/finish-multipart-upload", {
+          method: "post",
+          body: {
+            key: startUploadResponse!.key,
+            uploadId: startUploadResponse!.uploadId,
+            parts: uploadedParts,
+            eventId: props.eventId,
+            mediaType,
+          },
+        });
+        break;
+      } catch (error) {
+        console.error(`${key} finish-multipart-upload failed on attempt ${attempt}:`, error);
+        if (attempt === MAX_API_RETRIES - 1) throw error;
+        await sleep(BASE_RETRY_DELAY_MS * Math.pow(2, attempt));
+      }
+    }
     console.log(`${key} finished`);
 
     completeMediaUpload(key);
@@ -153,13 +262,17 @@ async function uploadMedia(key: string, file: File): Promise<boolean> {
     failMediaUpload(key, "Failed to upload file");
     console.error(error);
     if (uploadKey != null && uploadId != null) {
-      await $fetch("/api/abort-multipart-upload", {
-        method: "post",
-        body: {
-          key: uploadKey,
-          uploadId,
-        },
-      });
+      try {
+        await $fetch("/api/abort-multipart-upload", {
+          method: "post",
+          body: {
+            key: uploadKey,
+            uploadId,
+          },
+        });
+      } catch (abortError) {
+        console.error("Failed to abort multipart upload:", abortError);
+      }
     }
   }
 

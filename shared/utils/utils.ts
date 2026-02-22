@@ -11,6 +11,10 @@ export const useFlattenParam = (input: string | string[]): string => {
   throw createError({ statusMessage: "Unknown or invalid input type!" });
 };
 
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function generateGUID(): string {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
@@ -27,16 +31,21 @@ export async function runWithConcurrencyLimit<T>(
   const executing: Promise<T>[] = [];
 
   for (const task of tasks) {
-    const promise = task().then((result) => {
-      executing.splice(executing.indexOf(promise), 1);
-      return result;
-    });
+    const promise = task()
+      .then((result) => {
+        executing.splice(executing.indexOf(promise), 1);
+        return result;
+      })
+      .catch((error) => {
+        executing.splice(executing.indexOf(promise), 1);
+        throw error;
+      });
 
     results.push(promise);
     executing.push(promise);
 
     if (executing.length >= limit) {
-      await Promise.race(executing);
+      await Promise.race(executing).catch(() => {});
     }
   }
 

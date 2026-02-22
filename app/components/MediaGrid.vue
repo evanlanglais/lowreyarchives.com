@@ -3,6 +3,7 @@
     <UPageCard
         v-for="(media, idx) in mediaList"
         :key="media.id"
+        :data-media-index="idx"
         :variant="idx === selectedIndex ? 'soft' : 'ghost'"
         class="cursor-pointer relative overflow-hidden aspect-video"
         :ui="{ container: 'p-0 sm:p-0 h-full' }"

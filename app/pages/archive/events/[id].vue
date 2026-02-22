@@ -1,33 +1,34 @@
 <template>
   <UContainer>
-    <UPage class="flex flex-col h-full">
+    <!-- Header section (does not scroll) -->
+    <div>
       <div class="flex items-center gap-2 mt-2 mb-2">
         <UButton
-          icon="i-heroicons-arrow-left"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          @click="goBack"
+            icon="i-heroicons-arrow-left"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            @click="goBack"
         >
           Back
         </UButton>
       </div>
 
       <UPageHeader
-        :title="!!eventInfo ? eventInfo.title : ''"
-        :description="
+          :title="!!eventInfo ? eventInfo.title : ''"
+          :description="
           !!eventInfo && !!eventInfo.description ? eventInfo.description : ''
         "
-        :headline="headline"
+          :headline="headline"
       >
         <template #links>
           <div class="flex items-center gap-2">
             <UPopover v-if="eventDetails" v-model:open="detailsPopoverOpen" :content="{ align: 'end' }">
               <UButton
-                icon="i-heroicons-information-circle"
-                color="neutral"
-                variant="ghost"
-                size="sm"
+                  icon="i-heroicons-information-circle"
+                  color="neutral"
+                  variant="ghost"
+                  size="sm"
               />
 
               <template #content>
@@ -37,11 +38,11 @@
                     <span class="text-xs font-medium text-(--ui-text-muted) uppercase tracking-wide">Tags</span>
                     <div v-if="eventDetails.tags.length > 0" class="flex flex-wrap gap-1 mt-1">
                       <UBadge
-                        v-for="tag in eventDetails.tags"
-                        :key="tag"
-                        color="neutral"
-                        variant="subtle"
-                        size="xs"
+                          v-for="tag in eventDetails.tags"
+                          :key="tag"
+                          color="neutral"
+                          variant="subtle"
+                          size="xs"
                       >
                         {{ tag }}
                       </UBadge>
@@ -54,15 +55,15 @@
                     <span class="text-xs font-medium text-(--ui-text-muted) uppercase tracking-wide">In this event</span>
                     <div v-if="eventDetails.taggedUsers.length > 0" class="space-y-1 mt-1">
                       <div
-                        v-for="u in eventDetails.taggedUsers"
-                        :key="u.id"
-                        class="flex items-center gap-1.5 text-sm"
+                          v-for="u in eventDetails.taggedUsers"
+                          :key="u.id"
+                          class="flex items-center gap-1.5 text-sm"
                       >
                         <UAvatar
-                          v-if="u.avatar_url"
-                          :src="u.avatar_url"
-                          :alt="getUserDisplayName(u)"
-                          size="3xs"
+                            v-if="u.avatar_url"
+                            :src="u.avatar_url"
+                            :alt="getUserDisplayName(u)"
+                            size="3xs"
                         />
                         <span>{{ getUserDisplayName(u) }}</span>
                       </div>
@@ -74,22 +75,22 @@
                   <div>
                     <span class="text-xs font-medium text-(--ui-text-muted) uppercase tracking-wide">Shared with</span>
                     <div
-                      v-if="eventDetails.groups.length > 0 || eventDetails.sharedUsers.length > 0"
-                      class="space-y-1 mt-1 text-sm"
+                        v-if="eventDetails.groups.length > 0 || eventDetails.sharedUsers.length > 0"
+                        class="space-y-1 mt-1 text-sm"
                     >
                       <div v-for="g in eventDetails.groups" :key="`g-${g.id}`">
                         {{ g.group_name }}
                       </div>
                       <div
-                        v-for="u in eventDetails.sharedUsers"
-                        :key="`u-${u.id}`"
-                        class="flex items-center gap-1.5"
+                          v-for="u in eventDetails.sharedUsers"
+                          :key="`u-${u.id}`"
+                          class="flex items-center gap-1.5"
                       >
                         <UAvatar
-                          v-if="u.avatar_url"
-                          :src="u.avatar_url"
-                          :alt="getUserDisplayName(u)"
-                          size="3xs"
+                            v-if="u.avatar_url"
+                            :src="u.avatar_url"
+                            :alt="getUserDisplayName(u)"
+                            size="3xs"
                         />
                         <span>{{ getUserDisplayName(u) }}</span>
                       </div>
@@ -99,82 +100,69 @@
 
                   <!-- Single Edit button -->
                   <UButton
-                    label="Edit Details"
-                    icon="i-heroicons-pencil-square"
-                    color="neutral"
-                    variant="outline"
-                    size="sm"
-                    block
-                    @click="openDetailsModal"
+                      label="Edit Details"
+                      icon="i-heroicons-pencil-square"
+                      color="neutral"
+                      variant="outline"
+                      size="sm"
+                      block
+                      @click="openDetailsModal"
                   />
                 </div>
               </template>
             </UPopover>
 
             <UButton
-              label="Add Media"
-              icon="i-heroicons-arrow-up-tray"
-              color="neutral"
-              variant="outline"
-              @click="addMediaModalRef?.open()"
+                label="Add Media"
+                icon="i-heroicons-arrow-up-tray"
+                color="neutral"
+                variant="outline"
+                @click="addMediaModalRef?.open()"
             />
           </div>
         </template>
       </UPageHeader>
-      <UPageBody>
-        <!-- MediaTheater pinned at top -->
-        <div class="shrink-0" :style="`height: ${theaterHeight}%`">
-          <MediaTheater
-            :media="currentMedia"
-            :is-first="isFirst"
-            :is-last="isLast"
-            @previous="prevMedia"
-            @next="nextMedia"
-          />
-        </div>
+    </div>
 
-        <!-- Media info bar -->
-        <MediaInfoBar :media="currentMedia" />
+    <div ref="gridWrapper" class="p-2 sm:p-4">
+      <MediaGrid
+          :media-list="mediaItems"
+          :selected-index="lastViewedIndex ?? -1"
+          @select="onGridSelect"
+      />
+      <!-- Sentinel for infinite scroll -->
+      <div ref="sentinel" />
+    </div>
 
-        <!-- Grid below -->
-        <div
-          ref="gridWrapper"
-          class="flex-1 overflow-auto p-4"
-          @scroll.passive="onScroll"
-        >
-          <MediaGrid
-            :media-list="mediaItems"
-            :selected-index="currentIndex"
-            @select="setMediaByIndex"
-          />
-          <!-- Sentinel for infinite scroll -->
-          <div ref="sentinel" />
-        </div>
-      </UPageBody>
-    </UPage>
+    <MediaViewer
+        v-if="viewerOpen"
+        :media-list="mediaItems"
+        :start-index="viewerStartIndex"
+        @close="onViewerClose"
+    />
 
     <AddMediaModal
-      ref="addMediaModalRef"
-      :event-id="Number(eventId)"
-      @uploaded="onMediaUploaded"
+        ref="addMediaModalRef"
+        :event-id="Number(eventId)"
+        @uploaded="onMediaUploaded"
     />
 
     <EventDetailsModal
-      ref="detailsModalRef"
-      :event-id="Number(eventId)"
-      :current-tags="eventDetails?.tags ?? []"
-      :current-groups="eventDetails?.groups ?? []"
-      :current-tagged-users="eventDetails?.taggedUsers ?? []"
-      :current-shared-users="eventDetails?.sharedUsers ?? []"
-      @updated="refreshDetails"
+        ref="detailsModalRef"
+        :event-id="Number(eventId)"
+        :current-tags="eventDetails?.tags ?? []"
+        :current-groups="eventDetails?.groups ?? []"
+        :current-tagged-users="eventDetails?.taggedUsers ?? []"
+        :current-shared-users="eventDetails?.sharedUsers ?? []"
+        @updated="refreshDetails"
     />
   </UContainer>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import MediaTheater from "~/components/MediaTheater.vue";
+import { ref, computed, nextTick, onMounted } from "vue";
 import MediaGrid from "~/components/MediaGrid.vue";
+import MediaViewer from "~/components/MediaViewer.vue";
 import AddMediaModal from "~/components/AddMediaModal.vue";
 import EventDetailsModal from "~/components/EventDetailsModal.vue";
 import type { MediaWrapper } from "~/types";
@@ -186,7 +174,6 @@ const route = useRoute();
 const router = useRouter();
 const eventId = useFlattenParam(route.params.id);
 const eventInfo = ref(null);
-const isLoading = ref(false);
 const isMediaLoading = ref(false);
 const hasMore = ref(true);
 const eventStore = useEventStore();
@@ -200,19 +187,12 @@ useHead({
   title: computed(() => `${(eventInfo.value ? eventInfo.value.title : '')} | Lowrey Archives`),
 });
 
-// Input props/data could come from store or fetch
 const mediaItems = ref<MediaWrapper[]>(new Array<MediaWrapper>());
-const theaterHeight = 40; // percentage
 
-const currentIndex = ref(0);
-const currentMedia = computed(
-  () => mediaItems.value[currentIndex.value] || null,
-);
-
-const isFirst = computed(() => currentIndex.value === 0);
-const isLast = computed(
-  () => currentIndex.value === mediaItems.value.length - 1,
-);
+// Viewer state
+const viewerOpen = ref(false);
+const viewerStartIndex = ref(0);
+const lastViewedIndex = ref<number | null>(null);
 
 const headline = computed(() => {
   if (!eventInfo.value) {
@@ -240,29 +220,24 @@ function getUserDisplayName(user: { display_name: string | null; email: string |
   return user.display_name || user.email || "Unknown User";
 }
 
-function setMediaByIndex(idx: number) {
-  if (idx >= 0 && idx < mediaItems.value.length) {
-    currentIndex.value = idx;
+function onGridSelect(idx: number) {
+  viewerStartIndex.value = idx;
+  viewerOpen.value = true;
+}
+
+function onViewerClose(lastIndex: number) {
+  viewerOpen.value = false;
+  lastViewedIndex.value = lastIndex;
+  nextTick(() => scrollToGridItem(lastIndex));
+}
+
+function scrollToGridItem(idx: number) {
+  if (!gridWrapper.value) return;
+  const el = gridWrapper.value.querySelector(`[data-media-index="${idx}"]`);
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 }
-
-function prevMedia() {
-  if (currentIndex.value > 0) currentIndex.value--;
-}
-function nextMedia() {
-  if (currentIndex.value < mediaItems.value.length - 1) currentIndex.value++;
-}
-
-// Keyboard navigation
-onKeyStroke("ArrowLeft", (e) => {
-  e.preventDefault();
-  prevMedia();
-});
-
-onKeyStroke("ArrowRight", (e) => {
-  e.preventDefault();
-  nextMedia();
-});
 
 // Infinite scroll logic
 const gridWrapper = ref<HTMLElement | null>(null);
@@ -282,17 +257,7 @@ async function loadMore() {
   isMediaLoading.value = false;
 }
 
-async function onScroll() {
-  // fallback if not using IntersectionObserver
-  if (!gridWrapper.value) return;
-  const el = gridWrapper.value;
-  if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
-    await loadMore();
-  }
-}
-
 async function onMediaUploaded() {
-  // Reload media after upload
   mediaItems.value = [];
   hasMore.value = true;
   isMediaLoading.value = false;

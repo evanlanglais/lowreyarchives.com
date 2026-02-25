@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { useSwipe } from "@vueuse/core";
 
 const props = defineProps<{
@@ -12,12 +12,17 @@ const props = defineProps<{
 const emit = defineEmits<{
   previous: [];
   next: [];
+  "zoom-change": [zoomed: boolean];
 }>();
 
 const containerRef = ref<HTMLElement | null>(null);
 const imageRef = ref<HTMLElement | null>(null);
 
 const { transformStyle, isZoomed } = usePinchZoom(imageRef);
+
+watch(isZoomed, (zoomed) => {
+  emit("zoom-change", zoomed);
+});
 
 const { direction } = useSwipe(containerRef, {
   passive: false,

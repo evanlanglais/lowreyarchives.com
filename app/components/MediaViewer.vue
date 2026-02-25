@@ -1,5 +1,5 @@
 On <script setup lang="ts">
-import { ref, computed, onBeforeUnmount, onMounted } from "vue";
+import { ref, computed, watch, onBeforeUnmount, onMounted } from "vue";
 import { useScrollLock, onKeyStroke } from "@vueuse/core";
 import { formatBytes } from "#shared/utils/utils";
 import { MediaStatus, type MediaWrapper, type MediaVariant } from "#shared/types/media";
@@ -53,6 +53,18 @@ function onClose() {
 const show = ref(false);
 onMounted(() => {
   show.value = true;
+});
+
+// Track photo zoom state for immersive mode
+const isPhotoZoomed = ref(false);
+
+function onZoomChange(zoomed: boolean) {
+  isPhotoZoomed.value = zoomed;
+}
+
+// Reset zoom state when navigating between items
+watch(currentIndex, () => {
+  isPhotoZoomed.value = false;
 });
 
 onBeforeUnmount(() => {
@@ -153,8 +165,13 @@ const downloadMenuItems = computed((): DropdownMenuItem[] => {
   <Teleport to="body">
     <Transition name="fade">
       <div v-show="show" class="fixed inset-0 z-50 flex flex-col bg-black">
-        <!-- Top bar -->
-        <div class="shrink-0 flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3">
+        <!-- Top bar: collapses when photo is zoomed -->
+        <div
+          :class="[
+            'shrink-0 flex items-center justify-between px-3 sm:px-4 transition-all duration-200 overflow-hidden',
+            isPhotoZoomed ? 'max-h-0 py-0 opacity-0' : 'max-h-16 py-2 sm:py-3 opacity-100'
+          ]"
+        >
           <span class="text-white/70 text-sm font-medium">{{ counter }}</span>
 
           <div class="flex items-center gap-3 text-sm text-white/50">
@@ -209,9 +226,14 @@ const downloadMenuItems = computed((): DropdownMenuItem[] => {
         </div>
 
         <!-- Middle: nav + media -->
-        <div class="flex-1 min-h-0 flex items-center">
-          <!-- Previous button -->
-          <div class="shrink-0 w-10 sm:w-14 flex items-center justify-center">
+        <div class="flex-1 min-h-0 flex items-stretch">
+          <!-- Previous button: collapses when photo is zoomed -->
+          <div
+            :class="[
+              'shrink-0 flex items-center justify-center transition-all duration-200 overflow-hidden',
+              isPhotoZoomed ? 'w-0 opacity-0' : 'w-10 sm:w-14 opacity-100'
+            ]"
+          >
             <button
               v-if="!isFirst"
               class="rounded-full p-1.5 sm:p-2 text-white/60 transition-colors hover:text-white"
@@ -242,6 +264,7 @@ const downloadMenuItems = computed((): DropdownMenuItem[] => {
                   :is-last="isLast"
                   @previous="prev"
                   @next="next"
+                  @zoom-change="onZoomChange"
                 />
               </template>
 
@@ -278,8 +301,13 @@ const downloadMenuItems = computed((): DropdownMenuItem[] => {
             </template>
           </div>
 
-          <!-- Next button -->
-          <div class="shrink-0 w-10 sm:w-14 flex items-center justify-center">
+          <!-- Next button: collapses when photo is zoomed -->
+          <div
+            :class="[
+              'shrink-0 flex items-center justify-center transition-all duration-200 overflow-hidden',
+              isPhotoZoomed ? 'w-0 opacity-0' : 'w-10 sm:w-14 opacity-100'
+            ]"
+          >
             <button
               v-if="!isLast"
               class="rounded-full p-1.5 sm:p-2 text-white/60 transition-colors hover:text-white"

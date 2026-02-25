@@ -188,7 +188,8 @@ async function handleConfirmUpload() {
       if (uploaderRef.value.uploaderState === 4) {
         // COMPLETED
         uploadComplete.value = true;
-        eventStore.invalidateCache("getEventMedia", targetEventId.value);
+        eventStore.invalidateCacheAll("getEventMedia");
+        eventStore.invalidateCache("getEventThumbnails", targetEventId.value);
         eventStore.invalidateCache("getEvent", targetEventId.value);
         userStore.invalidateCacheAll("getUserEvents");
         await new Promise((resolve) => setTimeout(resolve, 3000));

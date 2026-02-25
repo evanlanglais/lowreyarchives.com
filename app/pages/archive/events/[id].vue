@@ -188,6 +188,8 @@ useHead({
 });
 
 const mediaItems = ref<MediaWrapper[]>(new Array<MediaWrapper>());
+const currentPage = ref(0);
+const PAGE_SIZE = 50;
 
 // Viewer state
 const viewerOpen = ref(false);
@@ -248,22 +250,29 @@ async function loadMore() {
   if (isMediaLoading.value || !hasMore.value) return;
   isMediaLoading.value = true;
 
-  const newItems = await eventStore.getEventMedia(eventId);
+  const nextPage = currentPage.value + 1;
+  const result = await eventStore.getEventMedia(eventId, nextPage, PAGE_SIZE);
 
-  hasMore.value = false;
-  observer.disconnect();
-  mediaItems.value.push(...newItems);
+  currentPage.value = nextPage;
+  hasMore.value = result.hasMore;
+  mediaItems.value.push(...result.items);
+
+  if (!hasMore.value) {
+    observer.disconnect();
+  }
 
   isMediaLoading.value = false;
 }
 
 async function onMediaUploaded() {
   mediaItems.value = [];
+  currentPage.value = 0;
   hasMore.value = true;
   isMediaLoading.value = false;
 
-  const newItems = await eventStore.getEventMedia(eventId);
-  mediaItems.value = newItems;
+  eventStore.invalidateCacheAll("getEventMedia");
+  eventStore.invalidateCache("getEventThumbnails", eventId);
+  await loadMore();
 }
 
 onMounted(async () => {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type {EventWrapper} from "#shared/types/event";
-import {MediaStatus, type MediaWrapper} from "#shared/types/media";
+import type {ThumbnailsResponse} from "#shared/types/media";
 import {useEventDateString} from "~/composables/event";
 import {useEventStore} from "~/stores/event";
 
@@ -10,43 +10,26 @@ const props = defineProps<{
 
 const loading = ref(true);
 const eventStore = useEventStore();
-const eventMedia = ref(null as Array<MediaWrapper> | null);
+const thumbnailData = ref<ThumbnailsResponse | null>(null);
 
 const carouselRef = ref();
 
 onMounted(async () => {
   loading.value = true;
-  eventMedia.value = await eventStore.getEventMedia(props.event.id);
+  thumbnailData.value = await eventStore.getEventThumbnails(props.event.id);
   loading.value = false;
 });
 
-// Limit thumbnails shown in carousel for performance
-const MAX_THUMBNAILS = 5;
-
 const eventThumbnails = computed((): Array<string> => {
-  if (!eventMedia.value) {
-    return [];
-  }
-
-  return eventMedia.value
-      .filter((media: MediaWrapper) => media.status === MediaStatus.Ready)
-      .slice(0, MAX_THUMBNAILS)
-      .map((media: MediaWrapper) => media.thumbnailUrl ?? media.url)
-      .filter((url): url is string => url != null && url !== "");
+  return thumbnailData.value?.thumbnails ?? [];
 });
 
 const hasProcessingMedia = computed((): boolean => {
-  if (!eventMedia.value || eventMedia.value.length === 0) return false;
-  return eventMedia.value.some(
-    (m) => m.status === MediaStatus.Pending || m.status === MediaStatus.Processing,
-  );
+  return thumbnailData.value?.hasProcessing ?? false;
 });
 
 const processingCount = computed((): number => {
-  if (!eventMedia.value) return 0;
-  return eventMedia.value.filter(
-    (m) => m.status === MediaStatus.Pending || m.status === MediaStatus.Processing,
-  ).length;
+  return thumbnailData.value?.processingCount ?? 0;
 });
 </script>
 
@@ -72,7 +55,7 @@ const processingCount = computed((): number => {
             class="overflow-hidden h-full"
             :ui="{ viewport: 'h-full', container: 'h-full ms-0 items-stretch', item: 'ps-0 basis-full' }"
         >
-          <img :src="item" class="w-full h-full object-cover" draggable="false" />
+          <img :src="item" class="w-full h-full object-cover" draggable="false">
         </UCarousel>
       </template>
       <div v-else-if="hasProcessingMedia" class="w-full h-full relative">

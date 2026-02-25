@@ -53,7 +53,6 @@ export async function invalidateEventCaches(
   const keys = [
     useEventInfoCacheKey(id),
     useEventDetailsCacheKey(id),
-    useEventMediaCacheKey(id),
     useEventThumbnailsCacheKey(id),
   ];
 
@@ -63,7 +62,10 @@ export async function invalidateEventCaches(
     }
   }
 
-  await removeKeys(keys);
+  await Promise.all([
+    removeKeys(keys),
+    removeByPrefix(useEventMediaCacheKey(id)),
+  ]);
 }
 
 /**
@@ -74,15 +76,12 @@ export async function invalidateMediaCaches(
   mediaId: number,
   eventId?: number,
 ): Promise<void> {
-  const keys: string[] = [];
-
   if (eventId) {
     const id = String(eventId);
-    keys.push(useEventMediaCacheKey(id), useEventThumbnailsCacheKey(id));
-  }
-
-  if (keys.length > 0) {
-    await removeKeys(keys);
+    await Promise.all([
+      removeKeys([useEventThumbnailsCacheKey(id)]),
+      removeByPrefix(useEventMediaCacheKey(id)),
+    ]);
   }
 }
 

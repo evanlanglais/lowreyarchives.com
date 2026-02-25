@@ -40,7 +40,8 @@ async function handleConfirmUpload() {
     if (uploaderRef.value.uploaderState === 4) {
       // COMPLETED
       uploadComplete.value = true;
-      eventStore.invalidateCache("getEventMedia", props.eventId);
+      eventStore.invalidateCacheAll("getEventMedia");
+      eventStore.invalidateCache("getEventThumbnails", props.eventId);
       eventStore.invalidateCache("getEvent", props.eventId);
 
       // Brief delay then close and notify parent

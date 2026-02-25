@@ -1,7 +1,7 @@
 import { useDataCache } from "#imports";
-import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
+import { serverSupabaseClient } from "#supabase/server";
 import type { Tables } from "#shared/types/database.types";
-import type { MediaWrapper } from "#shared/types/media";
+import type { MediaWrapper, PaginatedMediaResponse } from "#shared/types/media";
 import { useEventMediaCacheKey } from "#shared/utils/cacheKeys";
 import { mediaWrapperFromDatabaseMediaRow } from "~~/server/utils/conversions";
 
@@ -23,7 +23,7 @@ type MediaWithVariants = Tables<"media"> & {
 };
 
 export default defineEventHandler(
-  async (event): Promise<Array<MediaWrapper>> => {
+  async (event): Promise<PaginatedMediaResponse> => {
     const idParam = getRouterParam(event, "id");
 
     if (!idParam) {
@@ -34,11 +34,15 @@ export default defineEventHandler(
     }
 
     const id = +idParam;
+    const query = getQuery(event);
+    const page = Number(query.page) || 1;
+    const pageSize = Number(query.pageSize) || 50;
+    const offset = (page - 1) * pageSize;
 
-    const cacheKey = useEventMediaCacheKey(id.toString());
+    const cacheKey = `${useEventMediaCacheKey(id.toString())}:page:${page}:size:${pageSize}`;
     const cacheLength = 3600;
 
-    const { value, addToCache } = await useDataCache<MediaWrapper[]>(
+    const { value, addToCache } = await useDataCache<PaginatedMediaResponse>(
       cacheKey,
       event,
     );
@@ -51,8 +55,8 @@ export default defineEventHandler(
 
     const client = await serverSupabaseClient(event);
 
-    // Fetch media with variants in a single query
-    const { data, error } = await client
+    // Fetch media with variants in a single query, with pagination
+    const { data, error, count } = await client
       .from("event-media")
       .select(
         `
@@ -73,8 +77,11 @@ export default defineEventHandler(
           )
         )
       `,
+        { count: "exact" },
       )
       .eq("event_id", id)
+      .order("media_id")
+      .range(offset, offset + pageSize - 1)
       .returns<Array<MediaWithVariants>>();
 
     if (error) {
@@ -83,6 +90,8 @@ export default defineEventHandler(
         statusMessage: `Unable to load event ${error.message}`,
       });
     }
+
+    const total = count ?? 0;
 
     const transformedData = (
       await Promise.all(
@@ -103,11 +112,19 @@ export default defineEventHandler(
       )
     ).filter((mediaEntry) => !!mediaEntry);
 
+    const response: PaginatedMediaResponse = {
+      items: transformedData,
+      total,
+      page,
+      pageSize,
+      hasMore: offset + pageSize < total,
+    };
+
     // Tag with event ID so we can invalidate all event-related caches at once
     // Also tag each media item so media status changes can invalidate this cache
     const mediaTags = transformedData.map((m) => `media:${m.id}`);
-    await addToCache(transformedData, [`event:${id}`, ...mediaTags], cacheLength);
+    await addToCache(response, [`event:${id}`, ...mediaTags], cacheLength);
 
-    return transformedData;
+    return response;
   },
 );

@@ -14,6 +14,7 @@
         <NuxtImg
             :src="media.thumbnailUrl ?? media.url"
             :alt="media.description ?? undefined"
+            loading="lazy"
             class="w-full h-full object-cover"
         />
         <div

@@ -43,3 +43,17 @@ export type MediaWrapper = {
   // All available variants (for downloads, etc.)
   variants: MediaVariant[];
 };
+
+export type PaginatedMediaResponse = {
+  items: MediaWrapper[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+};
+
+export type ThumbnailsResponse = {
+  thumbnails: string[];
+  hasProcessing: boolean;
+  processingCount: number;
+};

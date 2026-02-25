@@ -20,15 +20,15 @@ const eventStore = useEventStore();
 
 onMounted(async () => {
   loading.value = true;
-  const [groupValue, eventValue, eventMediaValue] = await Promise.all([
+  const [groupValue, eventValue, eventMediaResult] = await Promise.all([
     groupStore.getGroup(groupId),
     eventStore.getEvent(eventId),
-    eventStore.getEventMedia(eventId),
+    eventStore.getEventMedia(eventId, 1, 500),
   ]);
 
   groupInfo.value = groupValue;
   eventInfo.value = eventValue;
-  eventMedia.value = eventMediaValue;
+  eventMedia.value = eventMediaResult.items;
   loading.value = false;
 });
 

@@ -62,27 +62,36 @@ onBeforeUnmount(() => {
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
         @click.self="onClose"
       >
-        <!-- Close button -->
+        <!-- Close button: hidden when zoomed -->
         <button
-          class="absolute top-4 right-4 z-10 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+          :class="[
+            'absolute top-4 right-4 z-10 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm transition-opacity duration-200 hover:bg-white/20',
+            isZoomed ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          ]"
           @click="onClose"
         >
           <UIcon name="i-heroicons-x-mark" class="size-6" />
         </button>
 
-        <!-- Previous arrow -->
+        <!-- Previous arrow: hidden when zoomed -->
         <button
           v-if="!isFirst"
-          class="absolute left-2 z-10 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+          :class="[
+            'absolute left-2 z-10 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm transition-opacity duration-200 hover:bg-white/20',
+            isZoomed ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          ]"
           @click="emit('previous')"
         >
           <UIcon name="i-heroicons-chevron-left" class="size-6" />
         </button>
 
-        <!-- Next arrow -->
+        <!-- Next arrow: hidden when zoomed -->
         <button
           v-if="!isLast"
-          class="absolute right-2 z-10 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+          :class="[
+            'absolute right-2 z-10 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm transition-opacity duration-200 hover:bg-white/20',
+            isZoomed ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          ]"
           @click="emit('next')"
         >
           <UIcon name="i-heroicons-chevron-right" class="size-6" />

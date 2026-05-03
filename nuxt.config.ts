@@ -49,16 +49,6 @@ export default defineNuxtConfig({
         },
         types: "#shared/types/database.types.ts",
     },
-    nitro: {
-        azure: {
-            config: {
-                // ...
-                platform: {
-                    apiRuntime: "node:20",
-                },
-            },
-        },
-    },
     ui: {
         icons: ["ph", "simple-icons"],
     },

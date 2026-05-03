@@ -205,7 +205,7 @@ const headline = computed(() => {
 });
 
 function goBack() {
-  router.push("/archive");
+  router.back();
 }
 
 async function refreshDetails() {

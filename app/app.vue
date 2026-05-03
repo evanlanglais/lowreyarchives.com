@@ -7,7 +7,7 @@ import SiteHeader from "~/components/SiteHeader.vue";
     <SiteHeader />
 
     <NuxtLayout>
-      <NuxtPage />
+      <NuxtPage :keepalive="{ include: ['ArchiveIndex'] }" />
     </NuxtLayout>
 
     <UFooter>

@@ -110,6 +110,8 @@ import type { EventWrapper } from "#shared/types/event";
 import type { GroupWithMembers } from "#shared/types/user";
 import { debounce } from "es-toolkit";
 
+defineOptions({ name: 'ArchiveIndex' });
+
 useHead({
   title: 'Archive | Lowrey Archives',
 });
@@ -254,7 +256,7 @@ onMounted(() => {
 
   // Optional: Infinite scroll logic if preferred over button
   observer = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting && hasMore.value && !loading.value) {
+    if (entries[0]?.isIntersecting && hasMore.value && !loading.value) {
       loadEvents();
     }
   }, { threshold: 0.1 });
@@ -279,9 +281,8 @@ const debouncedSearch = debounce(() => {
 // Watch for search query changes
 watch(searchQuery, () => debouncedSearch());
 
-// Re-fetch if user changes (unlikely in this context but good practice)
-watch(user, () => {
-  if (user.value) {
+watch(() => user.value?.sub, (newSub, oldSub) => {
+  if (newSub && newSub !== oldSub) {
     resetAndLoad();
   }
 });

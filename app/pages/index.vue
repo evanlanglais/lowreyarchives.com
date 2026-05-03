@@ -1,3 +1,9 @@
 <script setup lang="ts">
-navigateTo('/archive', { redirectCode: 301 });
+definePageMeta({
+  middleware: [() => navigateTo('/archive', { redirectCode: 301 })],
+});
 </script>
+
+<template>
+  <div />
+</template>

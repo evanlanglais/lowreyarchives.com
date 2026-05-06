@@ -35,12 +35,14 @@
               loginState == LoginStateEnum.WaitingTokenVerify ||
               loginState == LoginStateEnum.ErrorTokenVerify
             "
+            ref="otpAuthFormRef"
             title="Verify One-Time-Passcode"
             :loading="formLoading"
             icon="i-heroicons-lock-closed"
             :ui="{ root: 'text-center', footer: 'text-center', otp: 'text-center justify-center' }"
             :fields="otpFields"
             :schema="tokenSchema"
+            :validate-on="['submit']"
             @submit="submitTokenVerification"
           >
             <template #description>
@@ -199,6 +201,25 @@ function setLoading(state: boolean) {
 function setState(state: LoginStateEnum) {
   loginState.value = state;
 }
+
+const otpAuthFormRef = useTemplateRef<{
+  formRef: { submit: () => Promise<void> } | null;
+  state: { token?: (string | undefined)[] };
+}>('otpAuthFormRef');
+
+watch(
+  () => otpAuthFormRef.value?.state?.token,
+  (token) => {
+    if (loginState.value === LoginStateEnum.ErrorTokenVerify) {
+      setState(LoginStateEnum.TokenInput);
+    }
+    if (loginState.value !== LoginStateEnum.TokenInput) return;
+    if (!Array.isArray(token) || token.length !== 6) return;
+    if (token.some((digit: unknown) => typeof digit !== 'string' || digit === '')) return;
+    otpAuthFormRef.value?.formRef?.submit();
+  },
+  { deep: true },
+);
 
 const user = useSupabaseUser();
 

@@ -4,6 +4,18 @@ import { isBrowser } from 'es-toolkit/predicate';
 
 export default defineNuxtConfig({
     ssr: false,
+    app: {
+        head: {
+            meta: [
+                { name: "apple-mobile-web-app-capable", content: "yes" },
+                { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+                { name: "apple-mobile-web-app-title", content: "Lowrey Archives" },
+            ],
+            link: [
+                { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+            ],
+        },
+    },
     modules: [
         '@nuxt/eslint',
         '@nuxt/image',
@@ -13,6 +25,7 @@ export default defineNuxtConfig({
         "nuxt-multi-cache",
         "@pinia/nuxt",
         "@nuxt/image",
+        "@vite-pwa/nuxt",
     ],
     runtimeConfig: {
         public: {
@@ -87,6 +100,57 @@ export default defineNuxtConfig({
             prefix: "/__nuxt_multi_cache",
             authorization: process.env.NUXT_MULTI_CACHE_API_TOKEN || false,
             cacheTagInvalidationDelay: 0,
+        },
+    },
+    pwa: {
+        registerType: "autoUpdate",
+        manifest: {
+            name: "Lowrey Archives",
+            short_name: "Lowrey",
+            description: "Lowrey family media archive",
+            lang: "en",
+            theme_color: "#1d3557",
+            background_color: "#1d3557",
+            display: "standalone",
+            orientation: "portrait",
+            start_url: "/",
+            scope: "/",
+            icons: [
+                { src: "icon-192.png", sizes: "192x192", type: "image/png" },
+                { src: "icon-512.png", sizes: "512x512", type: "image/png" },
+                { src: "icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+                { src: "icon-maskable.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" },
+                { src: "icon-square.svg", sizes: "any", type: "image/svg+xml" },
+            ],
+        },
+        workbox: {
+            globPatterns: [
+                "offline.html",
+                "manifest.webmanifest",
+                "favicon.ico",
+                "apple-touch-icon.png",
+                "icon-*.png",
+                "icon-*.svg",
+            ],
+            navigateFallback: "/offline.html",
+            navigateFallbackDenylist: [
+                /^\/api\//,
+                /^\/__/,
+                /^\/confirm/,
+                /^\/login/,
+                /^\/logout/,
+                /^\/auth/,
+            ],
+            cleanupOutdatedCaches: true,
+        },
+        client: {
+            installPrompt: true,
+        },
+        devOptions: {
+            enabled: false,
+            suppressWarnings: true,
+            navigateFallback: "/",
+            type: "module",
         },
     },
 });

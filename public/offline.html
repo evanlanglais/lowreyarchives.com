@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1d3557" />
+    <title>Offline · Lowrey Archives</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <style>
+        :root { color-scheme: dark; }
+        html, body {
+            margin: 0;
+            height: 100%;
+            background: #1d3557;
+            color: #f4e9d4;
+            font-family: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        }
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+        .card { max-width: 28rem; }
+        img { width: 96px; height: 96px; }
+        h1 { font-size: 1.5rem; margin: 1.5rem 0 0.5rem; font-weight: 600; }
+        p { color: rgba(244, 233, 212, 0.7); line-height: 1.5; margin: 0 0 1.5rem; }
+        button {
+            font: inherit;
+            color: #1d3557;
+            background: #f4e9d4;
+            border: 0;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover { background: #e8dabd; }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <img src="/icon-512.png" alt="Lowrey Archives" />
+        <h1>You're offline</h1>
+        <p>Lowrey Archives needs an internet connection to load your media. Reconnect and try again.</p>
+        <button type="button" onclick="location.reload()">Retry</button>
+    </main>
+</body>
+</html>

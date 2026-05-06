@@ -105,9 +105,17 @@ export default defineNuxtConfig({
     },
     pwa: {
         registerType: "autoUpdate",
+        includeAssets: [
+            "offline.html",
+            "favicon.ico",
+            "apple-touch-icon.png",
+            "icon-192.png",
+            "icon-512.png",
+            "icon-maskable-512.png",
+        ],
         manifest: {
             name: "Lowrey Archives",
-            short_name: "Lowrey",
+            short_name: "Lowrey Archives",
             description: "Lowrey family media archive",
             lang: "en",
             theme_color: "#1d3557",
@@ -117,23 +125,14 @@ export default defineNuxtConfig({
             start_url: "/",
             scope: "/",
             icons: [
-                { src: "icon-192.png", sizes: "192x192", type: "image/png" },
-                { src: "icon-512.png", sizes: "512x512", type: "image/png" },
+                { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+                { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
                 { src: "icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
-                { src: "icon-maskable.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" },
-                { src: "icon-square.svg", sizes: "any", type: "image/svg+xml" },
             ],
         },
         workbox: {
-            globPatterns: [
-                "offline.html",
-                "manifest.webmanifest",
-                "favicon.ico",
-                "apple-touch-icon.png",
-                "icon-*.png",
-                "icon-*.svg",
-            ],
-            navigateFallback: "/offline.html",
+            globPatterns: ["**/*.{js,css,html,svg,png,ico,webp,webmanifest}"],
+            navigateFallback: "/offline",
             navigateFallbackDenylist: [
                 /^\/api\//,
                 /^\/__/,
@@ -145,7 +144,7 @@ export default defineNuxtConfig({
             cleanupOutdatedCaches: true,
         },
         client: {
-            installPrompt: true,
+            installPrompt: false,
         },
         devOptions: {
             enabled: false,

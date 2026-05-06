@@ -19,7 +19,6 @@ dist
 docs
 README.md
 CLAUDE.md
-staticwebapp.config.json
 Dockerfile
 .dockerignore
 compose.yml

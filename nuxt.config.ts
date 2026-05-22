@@ -4,6 +4,19 @@ import { isBrowser } from 'es-toolkit/predicate';
 
 export default defineNuxtConfig({
     ssr: false,
+    app: {
+        head: {
+            meta: [
+                { name: "apple-mobile-web-app-capable", content: "yes" },
+                { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+                { name: "apple-mobile-web-app-title", content: "Lowrey Archives" },
+            ],
+            link: [
+                { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+                { rel: "manifest", href: "/manifest.webmanifest" },
+            ],
+        },
+    },
     modules: [
         '@nuxt/eslint',
         '@nuxt/image',
@@ -13,6 +26,7 @@ export default defineNuxtConfig({
         "nuxt-multi-cache",
         "@pinia/nuxt",
         "@nuxt/image",
+        "@vite-pwa/nuxt",
     ],
     runtimeConfig: {
         public: {
@@ -87,6 +101,56 @@ export default defineNuxtConfig({
             prefix: "/__nuxt_multi_cache",
             authorization: process.env.NUXT_MULTI_CACHE_API_TOKEN || false,
             cacheTagInvalidationDelay: 0,
+        },
+    },
+    pwa: {
+        registerType: "autoUpdate",
+        includeAssets: [
+            "offline.html",
+            "favicon.ico",
+            "apple-touch-icon.png",
+            "icon-192.png",
+            "icon-512.png",
+            "icon-maskable-512.png",
+        ],
+        manifest: {
+            name: "Lowrey Archives",
+            short_name: "Lowrey Archives",
+            description: "Lowrey family media archive",
+            lang: "en",
+            theme_color: "#1d3557",
+            background_color: "#1d3557",
+            display: "standalone",
+            orientation: "portrait",
+            start_url: "/",
+            scope: "/",
+            icons: [
+                { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+                { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+                { src: "icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+            ],
+        },
+        workbox: {
+            globPatterns: ["**/*.{js,css,html,svg,png,ico,webp,webmanifest}"],
+            navigateFallback: "/offline",
+            navigateFallbackDenylist: [
+                /^\/api\//,
+                /^\/__/,
+                /^\/confirm/,
+                /^\/login/,
+                /^\/logout/,
+                /^\/auth/,
+            ],
+            cleanupOutdatedCaches: true,
+        },
+        client: {
+            installPrompt: false,
+        },
+        devOptions: {
+            enabled: false,
+            suppressWarnings: true,
+            navigateFallback: "/",
+            type: "module",
         },
     },
 });

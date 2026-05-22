@@ -37,6 +37,7 @@
     "@nuxt/ui": "^4.2.1",
     "@nuxtjs/supabase": "^2.0.3",
     "@pinia/nuxt": "^0.11.1",
+    "@vite-pwa/nuxt": "1.1.1",
     "@volar/language-server": "2.4.0-alpha.18",
     "@vue/language-server": "2.0.28",
     "@vueuse/nuxt": "^13.3.0",

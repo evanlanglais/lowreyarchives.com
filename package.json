@@ -44,7 +44,7 @@
     "es-toolkit": "^1.42.0",
     "hls.js": "^1.6.15",
     "luxon": "^3.4.4",
-    "nuxt": "^4.2.1",
+    "nuxt": "^4.4.8",
     "nuxt-multi-cache": "^4.0.3",
     "photoswipe": "^5.4.4",
     "pinia": "^3.0.3",

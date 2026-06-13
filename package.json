@@ -46,6 +46,7 @@
     "luxon": "^3.4.4",
     "nuxt": "^4.2.1",
     "nuxt-multi-cache": "^4.0.3",
+    "photoswipe": "^5.4.4",
     "pinia": "^3.0.3",
     "tailwindcss": "^4.1.17",
     "vidstack": "^1.12.13",

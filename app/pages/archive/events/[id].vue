@@ -134,7 +134,7 @@
       <div ref="sentinel" />
     </div>
 
-    <MediaViewer
+    <MediaLightbox
         v-if="viewerOpen"
         :media-list="mediaItems"
         :start-index="viewerStartIndex"
@@ -162,7 +162,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted } from "vue";
 import MediaGrid from "~/components/MediaGrid.vue";
-import MediaViewer from "~/components/MediaViewer.vue";
+import MediaLightbox from "~/components/MediaLightbox.vue";
 import AddMediaModal from "~/components/AddMediaModal.vue";
 import EventDetailsModal from "~/components/EventDetailsModal.vue";
 import type { MediaWrapper } from "~/types";
